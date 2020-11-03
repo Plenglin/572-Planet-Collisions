@@ -543,7 +543,7 @@ public:
 			glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, HeightTex);
-			shapes[i]->draw(prog, FALSE);
+			shapes[i]->draw(prog, false);
 
 		}
 		prog->unbind();
