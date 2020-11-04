@@ -351,6 +351,7 @@ public:
 			particle->pos = pos;
 			particle->vel = v;
 			particle->mass = 1;
+			particle->radius = planetoidy[i].r;
 
             world.particles.push_back(particle);
         }

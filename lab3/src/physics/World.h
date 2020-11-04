@@ -8,14 +8,19 @@
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <memory>
+
+struct Group;
 
 struct Particle {
     // State
     glm::vec3 pos, vel;
+    Group *group;
 
-    float mass;
+    float mass, radius;
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
+    bool is_touching(Particle *other);
 };
 
 struct Body : public Particle {
@@ -27,10 +32,20 @@ struct Body : public Particle {
     void apply_acc(glm::vec3 r, glm::vec3 da) override;
 };
 
+struct Group {
+    std::vector<Particle*> particles;
+    bool valid;
+    void merge(Group *other);
+    void solve();
+};
+
 struct World {
     std::vector<Particle*> particles;
+    std::vector<std::unique_ptr<Group>> groups;
+
     World();
 
+    void reset();
     void group();
     void solve_groups();
     void gravitate(float dt);
