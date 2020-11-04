@@ -340,7 +340,7 @@ public:
 
 
 		for (int i = 0; i < numberOfSpheres; i++) {
-            auto pos = vec3(rand() % 10 -5, rand() % 9 -4, -rand() % 5 - 15);
+            auto pos = vec3(randf() * 10 - 5, randf() * 9 - 4, -randf() * 5 - 15);
             auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 			planetoidy[i].pos = pos;
 			planetoidy[i].v = v;

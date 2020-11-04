@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "World.h"
 
-#define G 0.00001
+#define G 1
 
 using namespace glm;
 
@@ -31,11 +31,15 @@ void World::gravitate(float dt) {
         for (auto itb = particles.begin(); itb != ita; itb++) {
             auto *b = *itb;
             vec3 r = a->pos - b->pos;
-            vec3 unit_r = normalize(r);
-            float force_mag = G * a->mass * b->mass / dot(r, r);
+            float dist2 = dot(r, r);
+            if (dist2 < 1e-5)
+                continue;
 
-            a->vel += dt * unit_r * force_mag / a->mass;
-            b->vel += dt * -unit_r * force_mag / b->mass;
+            vec3 unit_r = normalize(r);
+            float force_mag = G * a->mass * b->mass / dist2;
+
+            a->vel -= dt * unit_r * force_mag / a->mass;
+            b->vel += dt * unit_r * force_mag / b->mass;
         }
     }
 }
@@ -43,7 +47,7 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     //group();
     //solve_groups();
-    //gravitate(dt);
+    gravitate(dt);
     integrate(dt);
 }
 
