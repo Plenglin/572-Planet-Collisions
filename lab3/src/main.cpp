@@ -13,6 +13,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 
 #include "WindowManager.h"
 #include "Shape.h"
+#include "physics/World.h"
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -112,6 +113,7 @@ class Application : public EventCallbacks
 public:
 	planitoy_data ssbo_data;
 
+	World world;
 	object planetoidy[numberOfSpheres];
 
 	WindowManager* windowManager = nullptr;
@@ -338,11 +340,20 @@ public:
 
 
 		for (int i = 0; i < numberOfSpheres; i++) {
-			planetoidy[i].pos = vec3(rand() % 10 -5, rand() % 9 -4, -rand() % 5 - 15);
-			planetoidy[i].v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            auto pos = vec3(rand() % 10 -5, rand() % 9 -4, -rand() % 5 - 15);
+            auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+			planetoidy[i].pos = pos;
+			planetoidy[i].v = v;
 			ssbo_data.pos[i] = vec4(planetoidy[i].pos, planetoidy[i].r);
 			ssbo_data.vel[i] = vec4(planetoidy[i].v, 0);
-		}
+
+			auto *particle = new Particle();
+			particle->pos = pos;
+			particle->vel = v;
+			particle->mass = 1;
+
+            world.particles.push_back(particle);
+        }
 		//used for testing
 		ssbo_data.testbit = vec4(0, 0, 0, 0);
 
@@ -424,49 +435,14 @@ public:
 		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
 		GLuint ssbo_binding_point_index = 2;
 		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
-
-
-
 	}
 	
-	void compute(double frametime)
-	{
-
-		for (int i = 0; i < numberOfSpheres; i++) {
-			ssbo_data.pos[i] = vec4(planetoidy[i].pos, planetoidy[i].r);
-			ssbo_data.vel[i] = vec4(planetoidy[i].v, frametime);
-		}
-		GLuint block_index = 0;
-		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-		GLuint ssbo_binding_point_index = 0;
-		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
-		glUseProgram(computeProgram);
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-		GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-		int siz = sizeof(planitoy_data);
-		memcpy(p, &ssbo_data, siz);
-		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-		glDispatchCompute((GLuint)1, (GLuint)1, 1);				//start compute shader
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-
-		//copy data back to CPU MEM
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-		p= glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-		memcpy(&ssbo_data, p, siz);
-		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-		for (int i = 0; i < numberOfSpheres; i++) {
-			planetoidy[i].v = vec3(ssbo_data.vel[i].x, ssbo_data.vel[i].y, ssbo_data.vel[i].z);
-			planetoidy[i].pos = vec3(ssbo_data.pos[i].x, ssbo_data.pos[i].y, ssbo_data.pos[i].z);
-		}
-
-	}
-	
+	void compute(double frametime) {
+        world.step(0.01);
+        for (int i = 0; i < numberOfSpheres; i++) {
+            planetoidy[i].pos = world.particles[i]->pos;
+        }
+    }
 
 	/****DRAW
 	This is the most important function in your program - this is where you
