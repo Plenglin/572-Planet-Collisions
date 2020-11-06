@@ -19,10 +19,6 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include <glm/gtc/matrix_transform.hpp>
 using namespace std;
 using namespace glm;
-#define numberOfSpheres 100
-shared_ptr<Shape> shapes[numberOfSpheres];
-
-
 
 double get_last_elapsed_time()
 {
@@ -99,22 +95,11 @@ public:
 };
 
 
-class planitoy_data {
-public:
-	vec4 pos[numberOfSpheres];//w is radius
-	vec4 vel[numberOfSpheres];//w is dt
-	vec4 testbit;
-};
-
-
 class Application : public EventCallbacks
 {
 
 public:
-	planitoy_data ssbo_data;
-
 	World world;
-	object planetoidy[numberOfSpheres];
 
 	WindowManager* windowManager = nullptr;
 
@@ -132,6 +117,8 @@ public:
 	GLuint Texture2, HeightTex;
 	GLuint ssbo_GPU_id;
 	GLuint computeProgram;
+
+	std::shared_ptr<Shape> sphere;
 
 	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
@@ -296,27 +283,23 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		for (int i = 0; i < numberOfSpheres; i++) {
-			shapes[i] = make_shared<Shape>();
-			//shape->loadMesh(resourceDirectory + "/t800.obj");
-			shapes[i]->loadMesh(resourceDirectory + "/sphere.obj");
-			shapes[i]->resize();
-			shapes[i]->init();
-			str = resourceDirectory + "/pluto.jpg";
-			strcpy(filepath, str.c_str());
-			data = stbi_load(filepath, &width, &height, &channels, 4);
-			glGenTextures(1, &HeightTex);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, HeightTex);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
-
-
+        sphere = make_shared<Shape>();
+        //shape->loadMesh(resourceDirectory + "/t800.obj");
+        sphere->loadMesh(resourceDirectory + "/sphere.obj");
+        sphere->resize();
+        sphere->init();
+        str = resourceDirectory + "/pluto.jpg";
+        strcpy(filepath, str.c_str());
+        data = stbi_load(filepath, &width, &height, &channels, 4);
+        glGenTextures(1, &HeightTex);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, HeightTex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
@@ -339,33 +322,18 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
-		for (int i = 0; i < numberOfSpheres; i++) {
+		for (int i = 0; i < 2; i++) {
             auto pos = vec3(randf() * 10 - 5, randf() * 9 - 4, -randf() * 5 - 15);
             auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-			planetoidy[i].pos = pos;
-			planetoidy[i].v = v;
-			ssbo_data.pos[i] = vec4(planetoidy[i].pos, planetoidy[i].r);
-			ssbo_data.vel[i] = vec4(planetoidy[i].v, 0);
 
 			auto *particle = new Particle();
 			particle->pos = pos;
 			particle->vel = v;
 			particle->mass = 1;
-			particle->radius = planetoidy[i].r;
+			particle->radius = randf() + 1;
 
             world.particles.push_back(particle);
         }
-		//used for testing
-		ssbo_data.testbit = vec4(0, 0, 0, 0);
-
-		
-		glGenBuffers(1, &ssbo_GPU_id);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(planitoy_data), &ssbo_data, GL_DYNAMIC_COPY);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-		
-
 	}
 
 	//General OGL initialization - set OGL state here
@@ -440,9 +408,6 @@ public:
 	
 	void compute(double frametime) {
         world.step(0.01);
-        for (int i = 0; i < numberOfSpheres; i++) {
-            planetoidy[i].pos = world.particles[i]->pos;
-        }
     }
 
 	/****DRAW
@@ -458,7 +423,6 @@ public:
 		compute(frametime);
 		
 		cout << endl << endl << "BUFFER AFTER COMPUTE SHADER" << endl << endl;
-		cout << "dataA: " << ssbo_data.testbit.x << endl;
 
 		// Get current frame buffer size.
 		int width, height;
@@ -509,9 +473,9 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, HeightTex);
 
-		for (int i = 0; i < numberOfSpheres; i++) {
-			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), planetoidy[i].pos);
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(planetoidy[i].r));
+		for (int i = 0; i < world.particles.size(); i++) {
+			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), world.particles[i]->pos);
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(world.particles[i]->radius));
 
 			M = TransZ * RotateY * RotateX * S;
 			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
@@ -520,9 +484,9 @@ public:
 			glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, HeightTex);
-			shapes[i]->draw(prog, false);
-
+			sphere->draw(prog, false);
 		}
+
 		prog->unbind();
 		heightshader->bind();
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

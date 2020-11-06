@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "World.h"
 
-#define G 1
+#define G 100
 
 using namespace glm;
 
@@ -22,7 +22,7 @@ bool Particle::is_touching(Particle *b) {
     float dist2 = dot(r, r);
     float radius_sum = radius + b->radius;
 
-    return dist2 <= radius_sum * radius_sum
+    return dist2 <= radius_sum * radius_sum;
 }
 
 World::World() = default;
@@ -74,7 +74,7 @@ void World::group() {
         for (auto itb = particles.begin(); itb != ita; itb++) {
             auto *b = *itb;
 
-            if (a->is_touching(b))
+            if (!a->is_touching(b))
                 continue;
 
             if (a->group) {
@@ -88,9 +88,10 @@ void World::group() {
                 a->group = b->group;
                 b->group->particles.push_back(a);
             } else {
-                auto group = std::unique_ptr<Group>();
+                auto group = std::unique_ptr<Group>(new Group());
                 group->particles.push_back(a);
                 group->particles.push_back(b);
+                groups.push_back(std::move(group));
             }
         }
     }
