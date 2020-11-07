@@ -9,18 +9,32 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <memory>
+#include <set>
 
-struct Group;
+struct Particle;
+
+struct Contact {
+    Particle *a, *b;
+    // a's position - b's position
+    glm::vec3 normal;
+};
+
+// For sorting the contacts in deepest to shallowest order
+struct ContactComparator {
+    bool operator()(Contact a, Contact b) {
+        return glm::length(a.normal) < glm::length(b.normal);
+    }
+};
 
 struct Particle {
     // State
     glm::vec3 pos, vel;
-    Group *group;
 
     float mass, radius;
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
-    bool is_touching(Particle *other);
+    bool is_touching(Particle *other, glm::vec3 *normal);
+    void solve_contacts();
 };
 
 struct Body : public Particle {
@@ -32,22 +46,16 @@ struct Body : public Particle {
     void apply_acc(glm::vec3 r, glm::vec3 da) override;
 };
 
-struct Group {
-    std::vector<Particle*> particles;
-    bool valid;
-    void merge(Group *other);
-    void solve();
-};
-
 struct World {
     std::vector<Particle*> particles;
-    std::vector<std::unique_ptr<Group>> groups;
+    // The set of contacts.
+    std::set<Contact, ContactComparator> contacts;
 
     World();
 
     void reset();
-    void group();
-    void solve_groups();
+    void find_contacts();
+    void solve_contacts();
     void gravitate(float dt);
     void integrate(float dt);
 

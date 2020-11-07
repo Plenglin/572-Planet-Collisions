@@ -322,6 +322,7 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
+		/*
 		for (int i = 0; i < 2; i++) {
             auto pos = vec3(randf() * 10 - 5, randf() * 9 - 4, -randf() * 5 - 15);
             auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
@@ -333,8 +334,27 @@ public:
 			particle->radius = randf() + 1;
 
             world.particles.push_back(particle);
-        }
-	}
+        }*/
+
+		Particle *p = new Particle();
+        p->pos = vec3(0, 2,-20);
+        p->vel = vec3(0, -1,0);
+        p->radius = 1;
+        p->mass = 1;
+		world.particles.push_back(p);
+        p = new Particle();
+        p->pos = vec3(0, -2, -20);
+        p->vel = vec3(0, 1,0);
+        p->radius = 1;
+        p->mass = 2;
+        world.particles.push_back(p);
+        p = new Particle();
+        p->pos = vec3(-2, 0, -20);
+        p->vel = vec3(1, 0, 0);
+        p->radius = 1;
+        p->mass = 1;
+        world.particles.push_back(p);
+    }
 
 	//General OGL initialization - set OGL state here
 	void init(const std::string& resourceDirectory)

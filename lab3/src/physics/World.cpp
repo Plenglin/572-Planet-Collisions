@@ -17,12 +17,17 @@ void Particle::apply_acc(glm::vec3 r, glm::vec3 da) {
     vel += da;
 }
 
-bool Particle::is_touching(Particle *b) {
-    vec3 r = pos - b->pos;
-    float dist2 = dot(r, r);
+bool Particle::is_touching(Particle *b, glm::vec3 *normal) {
+    vec3 delta = pos - b->pos;
+    float dist = length(delta);
     float radius_sum = radius + b->radius;
+    float depth = radius_sum - dist;
+    *normal = normalize(delta) * depth;
 
-    return dist2 <= radius_sum * radius_sum;
+    return depth >= 0;
+}
+
+void Particle::solve_contacts() {
 }
 
 World::World() = default;
@@ -54,54 +59,38 @@ void World::gravitate(float dt) {
 
 void World::step(float dt) {
     reset();
-    group();
-    solve_groups();
+    find_contacts();
+    solve_contacts();
 
-    gravitate(dt);
+    //gravitate(dt);
     integrate(dt);
 }
 
 void World::reset() {
-    groups.clear();
-    for (auto & particle : particles) {
-        particle->group = nullptr;
-    }
+    contacts.clear();
 }
 
-void World::group() {
+void World::find_contacts() {
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
         for (auto itb = particles.begin(); itb != ita; itb++) {
             auto *b = *itb;
 
-            if (!a->is_touching(b))
+            glm::vec3 normal;
+            if (!a->is_touching(b, &normal))
                 continue;
 
-            if (a->group) {
-                if (b->group) {
-                    a->group->merge(b->group);
-                } else {
-                    b->group = a->group;
-                    a->group->particles.push_back(b);
-                }
-            } else if (b->group) {
-                a->group = b->group;
-                b->group->particles.push_back(a);
-            } else {
-                auto group = std::unique_ptr<Group>(new Group());
-                group->particles.push_back(a);
-                group->particles.push_back(b);
-                groups.push_back(std::move(group));
-            }
+            contacts.insert(Contact{a, b, normal});
         }
     }
 }
 
-void World::solve_groups() {
-    for (auto &group: groups) {
-        for (int i = 0; i < group->particles.size(); i++) {
-            group->solve();
-        }
+void World::solve_contacts() {
+    for (auto &c : contacts) {
+        auto a_deflection = c.normal * c.b->mass / (c.a->mass + c.b->mass);
+        auto b_deflection = c.normal - a_deflection;
+        c.a->pos += a_deflection;
+        c.b->pos -= b_deflection;
     }
 }
 
@@ -113,27 +102,4 @@ void Body::integrate(float dt) {
 void Body::apply_acc(glm::vec3 r, glm::vec3 da) {
     Particle::apply_acc(r, da);
     auto ang_impulse = cross(r, da);
-}
-
-void Group::merge(Group *other) {
-    other->valid = false;
-    for (auto particle : other->particles) {
-        particle->group = this;
-        particles.push_back(particle);
-    }
-    other->particles.clear();
-}
-
-void Group::solve() {
-    for (auto ita = particles.begin(); ita != particles.end(); ita++) {
-        auto *a = *ita;
-        for (auto itb = particles.begin(); itb != ita; itb++) {
-            auto *b = *itb;
-
-            if (a->is_touching(b)) {
-                // Momentum calculation
-
-            }
-        }
-    }
 }
