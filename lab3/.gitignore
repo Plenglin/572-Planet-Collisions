@@ -1,2 +1,3 @@
 cmake-build-*
 !resources/*.obj
+.idea/workspace.xml
