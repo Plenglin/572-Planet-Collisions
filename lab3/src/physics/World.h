@@ -12,6 +12,7 @@
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
+#include <bits/unordered_set.h>
 
 struct Particle;
 
@@ -44,12 +45,23 @@ namespace std {
     };
 }
 
+struct ContactGroup;
+
+struct GroupSearchData {
+    // If this group is stable (i.e. internal gravitation wouldn't change anything)
+    bool stable;
+
+    // Particles that are touching.
+    std::vector<Particle *> touching;
+};
+
 struct Particle {
     // State
     glm::vec3 pos, vel;
     // Accumulator
     glm::vec3 impulse;
     std::unordered_map<Particle*, Contact*> contacts;
+    ContactGroup *group;
 
     float mass, radius;
     virtual void integrate(float dt);
@@ -58,6 +70,21 @@ struct Particle {
     void solve_contacts();
 
     void reset();
+
+    // DFS for particles in this group
+    GroupSearchData get_group_members(std::unordered_set<Particle *> visited);
+};
+
+// Represents a bunch of particles touching each other.
+struct ContactGroup {
+    int id;
+    std::unordered_set<Particle*> particles;
+    glm::vec3 pos;
+    glm::vec3 grav_force;
+    float mass;
+    bool active;
+    explicit ContactGroup(int id);
+    void calculate_params();
 };
 
 struct Body : public Particle {
@@ -73,14 +100,17 @@ struct World {
     std::vector<Particle*> particles;
     // The set of contacts.
     std::vector<Contact> contacts;
+    std::vector<ContactGroup> groups;
 
     World();
 
     void reset();
+    void deintersect_all();
+
     void find_intersections();
     void solve_intersections();
-    void deintersect_all();
     void solve_contacts();
+    void create_groups();
     void gravitate(float dt);
     void integrate(float dt);
 

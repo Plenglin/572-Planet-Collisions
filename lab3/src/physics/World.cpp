@@ -36,6 +36,38 @@ void Particle::solve_contacts() {
 void Particle::reset() {
     impulse = vec3(0, 0, 0);
     contacts.clear();
+    group = nullptr;
+}
+
+GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> visited) {
+    std::vector<Particle*> touching{this};
+    if (contacts.empty()) {
+        return GroupSearchData { true, touching };
+    }
+
+    std::vector<Particle*> to_visit{this};
+    visited.insert(this);
+    bool stable = true;
+    while (!to_visit.empty()) {
+        // Pop element
+        auto particle = to_visit.back();
+        to_visit.pop_back();
+        if (visited.find(particle) != visited.end()) {
+            continue;
+        }
+
+        // Check neighbors
+        for (auto &neighbor_pair : particle->contacts) {
+            if (!neighbor_pair.second->approaching) {
+                stable = false;
+            }
+            auto neighbor = neighbor_pair.first;
+            to_visit.push_back(neighbor);
+            touching.push_back(neighbor);
+        }
+    }
+
+    return GroupSearchData {stable, touching};
 }
 
 World::World() = default;
@@ -127,6 +159,10 @@ void World::deintersect_all() {
     } while (!contacts.empty());
 }
 
+void World::create_groups() {
+
+}
+
 void Contact::solve_momentum() {
     // Calculate with b as reference frame at rest.
     auto va = a->vel - b->vel;
@@ -185,4 +221,12 @@ void Body::integrate(float dt) {
 void Body::apply_acc(glm::vec3 r, glm::vec3 da) {
     Particle::apply_acc(r, da);
     auto ang_impulse = cross(r, da);
+}
+
+ContactGroup::ContactGroup(int id) : id(id), active(true), grav_force(0, 0, 0) {
+
+}
+
+void ContactGroup::calculate_params() {
+
 }
