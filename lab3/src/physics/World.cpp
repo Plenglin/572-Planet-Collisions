@@ -3,6 +3,7 @@
 //
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
 #include "World.h"
 
 #define G 30
@@ -70,7 +71,7 @@ void World::gravitate(float dt) {
 
 void World::step(float dt) {
     reset();
-    solve_intersections();
+    find_intersections();
     solve_contacts();
 
     gravitate(dt);
@@ -84,7 +85,7 @@ void World::reset() {
     contacts.clear();
 }
 
-void World::solve_intersections() {
+void World::find_intersections() {
     // Find all contacts
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
@@ -103,15 +104,27 @@ void World::solve_intersections() {
     }
 }
 
+void World::solve_intersections() {
+    std::sort(contacts.begin(), contacts.end(), ContactDepthComparator());
+    for (auto &c : contacts) {
+        c.deintersect();
+    }
+}
+
 void World::solve_contacts() {
     for (int i = 0; i < contacts.size(); i++) {
         for (auto c : contacts) {
             c.solve_momentum();
         }
     }
-    for (auto &c : contacts) {
-        c.deintersect();
-    }
+}
+
+void World::deintersect_all() {
+    do {
+        contacts.clear();
+        find_intersections();
+        solve_intersections();
+    } while (!contacts.empty());
 }
 
 void Contact::solve_momentum() {

@@ -77,7 +77,9 @@ struct World {
     World();
 
     void reset();
+    void find_intersections();
     void solve_intersections();
+    void deintersect_all();
     void solve_contacts();
     void gravitate(float dt);
     void integrate(float dt);
