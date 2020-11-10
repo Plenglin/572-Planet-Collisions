@@ -321,9 +321,7 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-		/*
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 6; i++) {
             auto pos = vec3(randf() * 10 - 5, randf() * 9 - 4, -randf() * 5 - 15);
             auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 
@@ -331,11 +329,12 @@ public:
 			particle->pos = pos;
 			particle->vel = v;
 			particle->mass = 1;
-			particle->radius = randf() + 1;
+			particle->radius = (randf() + 1) * 0.1;
 
             world.particles.push_back(particle);
-        }*/
+        }
 
+		/*
 		Particle *p = new Particle();
         p->pos = vec3(0, 2,-20);
         p->vel = vec3(0, -0,0);
@@ -353,7 +352,7 @@ public:
         p->vel = vec3(0, 0, 0);
         p->radius = 1;
         p->mass = 1;
-        world.particles.push_back(p);
+        world.particles.push_back(p);*/
     }
 
 	//General OGL initialization - set OGL state here
@@ -427,7 +426,7 @@ public:
 	}
 	
 	void compute(double frametime) {
-        world.step(0.01);
+        world.step(0.005);
     }
 
 	/****DRAW

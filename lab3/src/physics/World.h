@@ -11,16 +11,20 @@
 #include <memory>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 
 struct Particle;
 
 struct Contact {
+    Contact(Particle *pParticle, Particle *pParticle1, glm::vec3 vec);
+
     Particle *a, *b;
     // Collision normal oriented from b to a
     glm::vec3 normal;
+    bool approaching;
 
     void deintersect() const;
-    void solve_momentum() const;
+    void solve_momentum();
     bool operator==(Contact other) const;
 };
 
@@ -45,12 +49,15 @@ struct Particle {
     glm::vec3 pos, vel;
     // Accumulator
     glm::vec3 impulse;
+    std::unordered_map<Particle*, Contact*> contacts;
 
     float mass, radius;
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
     bool is_touching(Particle *other, glm::vec3 *normal);
     void solve_contacts();
+
+    void reset();
 };
 
 struct Body : public Particle {
@@ -65,7 +72,7 @@ struct Body : public Particle {
 struct World {
     std::vector<Particle*> particles;
     // The set of contacts.
-    std::unordered_set<Contact> contacts;
+    std::vector<Contact> contacts;
 
     World();
 

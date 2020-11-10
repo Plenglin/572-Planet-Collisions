@@ -23,12 +23,18 @@ bool Particle::is_touching(Particle *b, glm::vec3 *normal) {
     float dist = length(delta);
     float radius_sum = radius + b->radius;
     float depth = radius_sum - dist;
-    *normal = normalize(delta) * depth;
+    if (normal != nullptr)
+        *normal = normalize(delta) * depth;
 
     return depth >= 0;
 }
 
 void Particle::solve_contacts() {
+}
+
+void Particle::reset() {
+    impulse = vec3(0, 0, 0);
+    contacts.clear();
 }
 
 World::World() = default;
@@ -49,11 +55,13 @@ void World::gravitate(float dt) {
             if (dist2 < 1e-5)
                 continue;
 
-            vec3 unit_r = normalize(r);
-            float force_mag = G * a->mass * b->mass / dist2;
+            auto contact = a->contacts.find(b);
 
-            a->vel -= dt * unit_r * force_mag / a->mass;
-            b->vel += dt * unit_r * force_mag / b->mass;
+            vec3 unit_r = normalize(r);
+            float specific_acc = G / dist2;
+
+            a->vel -= dt * unit_r * specific_acc * b->mass;
+            b->vel += dt * unit_r * specific_acc * a->mass;
         }
     }
 }
@@ -69,7 +77,7 @@ void World::step(float dt) {
 
 void World::reset() {
     for (auto &p : particles) {
-        p->impulse = vec3(0, 0, 0);
+        p->reset();
     }
     contacts.clear();
 }
@@ -85,15 +93,17 @@ void World::solve_intersections() {
             if (!a->is_touching(b, &normal))
                 continue;
 
-            auto contact = Contact{a, b, normal};
-            contacts.insert(contact);  // union of contacts for all iterations
+            auto contact = Contact(a, b, normal);
+            contacts.push_back(contact);  // union of contacts for all iterations
+            a->contacts[b] = (&*contacts.end());
+            b->contacts[a] = (&*contacts.end());
         }
     }
 }
 
 void World::solve_contacts() {
     for (int i = 0; i < contacts.size(); i++) {
-        for (auto &c : contacts) {
+        for (auto c : contacts) {
             c.solve_momentum();
         }
     }
@@ -102,7 +112,7 @@ void World::solve_contacts() {
     }
 }
 
-void Contact::solve_momentum() const {
+void Contact::solve_momentum() {
     // Initial momentums along normal
     auto unit_normal = normalize(normal);
     auto va_normal = dot(unit_normal, a->vel);
@@ -110,6 +120,7 @@ void Contact::solve_momentum() const {
 
     // Do nothing if the particles are leaving each other
     if (va_normal > 0 && vb_normal < 0) {
+        approaching = true;
         return;
     }
     auto pa = a->mass * va_normal;
@@ -125,10 +136,10 @@ void Contact::solve_momentum() const {
     // Tangent velocities
     auto va_tangent = a->vel - unit_normal * va_normal;
     auto vb_tangent = b->vel - unit_normal * vb_normal;
-
-    // Apply "friction"
-    va_tangent *= 0.9;
-    vb_tangent *= 0.9;
+    auto va_relative = va_tangent - vb_tangent;
+    va_relative *= 0.05;  // "friction"
+    va_tangent -= va_relative;
+    vb_tangent += va_relative;
 
     // Perform impulse calculation
     auto dva = unit_normal;
@@ -149,6 +160,10 @@ void Contact::deintersect() const {
     auto b_deflection = normal - a_deflection;
     a->pos += a_deflection;
     b->pos -= b_deflection;
+}
+
+Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), normal(normal), approaching(false) {
+
 }
 
 void Body::integrate(float dt) {
