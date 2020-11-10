@@ -19,6 +19,7 @@ struct Contact {
     // Collision normal oriented from b to a
     glm::vec3 normal;
 
+    void deintersect() const;
     void solve_momentum() const;
     bool operator==(Contact other) const;
 };

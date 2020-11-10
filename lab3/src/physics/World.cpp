@@ -75,34 +75,18 @@ void World::reset() {
 }
 
 void World::solve_intersections() {
-    for (int i = 0; i < 3; i++) {
-        // Find all contacts
-        std::set<Contact, ContactDepthComparator> iteration_contacts;
-        for (auto ita = particles.begin(); ita != particles.end(); ita++) {
-            auto *a = *ita;
-            for (auto itb = particles.begin(); itb != ita; itb++) {
-                auto *b = *itb;
+    // Find all contacts
+    for (auto ita = particles.begin(); ita != particles.end(); ita++) {
+        auto *a = *ita;
+        for (auto itb = particles.begin(); itb != ita; itb++) {
+            auto *b = *itb;
 
-                glm::vec3 normal;
-                if (!a->is_touching(b, &normal))
-                    continue;
+            glm::vec3 normal;
+            if (!a->is_touching(b, &normal))
+                continue;
 
-                auto contact = Contact{a, b, normal};
-                iteration_contacts.insert(contact);  // store for this iteration
-                contacts.insert(contact);  // union of contacts for all iterations
-            }
-        }
-
-        // no more contacts this iteration
-        if (iteration_contacts.empty()) break;
-
-        // Solve contacts this iteration, deepest ones first
-        for (auto &c : iteration_contacts) {
-            // De-intersect particles based on relative mass
-            auto a_deflection = c.normal * c.b->mass / (c.a->mass + c.b->mass);
-            auto b_deflection = c.normal - a_deflection;
-            c.a->pos += a_deflection;
-            c.b->pos -= b_deflection;
+            auto contact = Contact{a, b, normal};
+            contacts.insert(contact);  // union of contacts for all iterations
         }
     }
 }
@@ -113,15 +97,12 @@ void World::solve_contacts() {
             c.solve_momentum();
         }
     }
+    for (auto &c : contacts) {
+        c.deintersect();
+    }
 }
 
 void Contact::solve_momentum() const {
-// De-intersect particles
-    auto a_deflection = normal * b->mass / (a->mass + b->mass);
-    auto b_deflection = normal - a_deflection;
-    a->pos += a_deflection;
-    b->pos -= b_deflection;
-
     // Initial momentums along normal
     auto unit_normal = normalize(normal);
     auto va_normal = dot(unit_normal, a->vel);
@@ -141,7 +122,7 @@ void Contact::solve_momentum() const {
     auto e2_initial = a->mass * sa * sa + b->mass * sb * sb;
 
     // Energy after applying restitution
-    auto e2_final = e2_initial * 0.3;
+    auto e2_final = e2_initial * 0.1;
 
     // Quadratic equation parameters to solve for va
     auto quad_a = a->mass * a->mass;
@@ -158,9 +139,13 @@ void Contact::solve_momentum() const {
     auto pb_final = pnet - pa_final;
     auto vb_final = pb_final / b->mass;
 
-    // Tangent velocities for recombination
+    // Tangent velocities
     auto va_tangent = a->vel - unit_normal * va_normal;
     auto vb_tangent = b->vel - unit_normal * vb_normal;
+
+    // Apply "friction"
+    va_tangent *= 0.9;
+    vb_tangent *= 0.9;
 
     // Perform impulse calculation
     auto dva = unit_normal;
@@ -173,6 +158,14 @@ void Contact::solve_momentum() const {
 
 bool Contact::operator==(Contact other) const {
     return a == other.a && b == other.b;
+}
+
+void Contact::deintersect() const {
+    // De-intersect particles
+    auto a_deflection = normal * b->mass / (a->mass + b->mass);
+    auto b_deflection = normal - a_deflection;
+    a->pos += a_deflection;
+    b->pos -= b_deflection;
 }
 
 void Body::integrate(float dt) {
