@@ -338,19 +338,19 @@ public:
 
 		Particle *p = new Particle();
         p->pos = vec3(0, 2,-20);
-        p->vel = vec3(0, -1,0);
+        p->vel = vec3(0, -0,0);
         p->radius = 1;
         p->mass = 1;
 		world.particles.push_back(p);
         p = new Particle();
         p->pos = vec3(0, -2, -20);
-        p->vel = vec3(0, 1,0);
+        p->vel = vec3(0, 0,0);
         p->radius = 1;
         p->mass = 2;
         world.particles.push_back(p);
         p = new Particle();
         p->pos = vec3(-2, 0, -20);
-        p->vel = vec3(1, 0, 0);
+        p->vel = vec3(0, 0, 0);
         p->radius = 1;
         p->mass = 1;
         world.particles.push_back(p);
