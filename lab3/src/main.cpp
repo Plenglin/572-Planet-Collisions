@@ -321,7 +321,7 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 5; i++) {
             auto pos = vec3(randf() * 10 - 5, randf() * 9 - 4, -randf() * 5 - 15);
             auto v =   vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 

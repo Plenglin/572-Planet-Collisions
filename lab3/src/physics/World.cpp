@@ -56,6 +56,8 @@ void World::gravitate(float dt) {
                 continue;
 
             auto contact = a->contacts.find(b);
+            if (contact != a->contacts.end() && contact->second->approaching)
+                continue;
 
             vec3 unit_r = normalize(r);
             float specific_acc = G / dist2;
@@ -113,41 +115,37 @@ void World::solve_contacts() {
 }
 
 void Contact::solve_momentum() {
-    // Initial momentums along normal
-    auto unit_normal = normalize(normal);
-    auto va_normal = dot(unit_normal, a->vel);
-    auto vb_normal = dot(unit_normal, b->vel);
+    // Calculate with b as reference frame at rest.
+    auto va = a->vel - b->vel;
 
-    // Do nothing if the particles are leaving each other
-    if (va_normal > 0 && vb_normal < 0) {
-        approaching = true;
+    // Note that normal points from b -> a
+    auto unit_normal = normalize(normal);
+    auto va_normal = dot(unit_normal, va);  // va's normal component
+
+    // Do nothing if a is leaving b
+    if (va_normal > 0) {
+        approaching = false;
         return;
     }
+    approaching = true;
     auto pa = a->mass * va_normal;
-    auto pb = b->mass * vb_normal;
-    auto pnet = pa + pb;
 
-    // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation
-    auto va_final = (pa + pb + b->mass * 0.9 * (vb_normal - va_normal)) / (a->mass + b->mass);
+    // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
+    auto va_final = (pa - b->mass * 0.9 * va_normal) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
-    auto pb_final = pnet - pa_final;
+    auto pb_final = pa - pa_final;
     auto vb_final = pb_final / b->mass;
 
-    // Tangent velocities
-    auto va_tangent = a->vel - unit_normal * va_normal;
-    auto vb_tangent = b->vel - unit_normal * vb_normal;
-    auto va_relative = va_tangent - vb_tangent;
-    va_relative *= 0.05;  // "friction"
-    va_tangent -= va_relative;
-    vb_tangent += va_relative;
+    // Tangent velocity
+    auto va_tangent = va - unit_normal * va_normal;
 
     // Perform impulse calculation
     auto dva = unit_normal;
     dva *= va_final;
     auto dvb = unit_normal;
     dvb *= vb_final;
-    a->vel = va_tangent + dva;
-    b->vel = vb_tangent + dvb;
+    a->vel = va_tangent + dva + b->vel;
+    b->vel += dvb;
 }
 
 bool Contact::operator==(Contact other) const {
