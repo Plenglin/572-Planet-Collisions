@@ -116,25 +116,8 @@ void Contact::solve_momentum() const {
     auto pb = b->mass * vb_normal;
     auto pnet = pa + pb;
 
-    // Initial kinetic energy (times 2)
-    auto sa = length(va_normal);
-    auto sb = length(vb_normal);
-    auto e2_initial = a->mass * sa * sa + b->mass * sb * sb;
-
-    // Energy after applying restitution
-    auto e2_final = e2_initial * 0.1;
-
-    // Quadratic equation parameters to solve for va
-    auto quad_a = a->mass * a->mass;
-    auto quad_b = a->mass * (b->mass - 2 * pnet);
-    auto quad_c = pnet * pnet - e2_final * b->mass;
-
-    // Perform calculations for final velocities along normal
-    auto discrim = quad_b * quad_b - 4 * quad_a * quad_c;
-    if (discrim < 0) {
-        return;
-    }
-    auto va_final = (quad_b + sqrt(discrim)) / (2 * quad_a);
+    // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation
+    auto va_final = (pa + pb + b->mass * 0.9 * (vb_normal - va_normal)) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
     auto pb_final = pnet - pa_final;
     auto vb_final = pb_final / b->mass;
