@@ -6,12 +6,22 @@
 #include <algorithm>
 #include "World.h"
 
-#define G 30
-#define u_S 1f
+#define G 3000
+#define u_S 1.0f
 #define u_K 0.5f
 #define RESTITUTION 0.3f
 
 using namespace glm;
+
+struct Decomposition {
+    vec3 tangent;
+    float normal;
+};
+Decomposition decompose(vec3 v, vec3 unit_normal) {
+    float along_normal = dot(v, unit_normal);
+    vec3 tangent = v - unit_normal * along_normal;
+    return {tangent, along_normal};
+}
 
 void Particle::integrate(float dt) {
     vel += force * dt / mass;
@@ -33,7 +43,25 @@ bool Particle::is_touching(Particle *b, glm::vec3 *normal) {
     return depth >= 0;
 }
 
-void Particle::solve_contacts() {
+void Particle::deintersect() {
+    if (contacts.empty()) return;
+
+    vec3 weighted_normals = vec3(0, 0, 0);
+    float mass_sum = mass;
+    for (auto &pair : contacts) {
+        auto *other = pair.first;
+
+        // Ensure normal faces towards this particle
+        vec3 normal = pair.second->normal;
+        if (pair.second->a == other) {
+            normal = -normal;
+        }
+
+        weighted_normals += normal * other->mass;
+        mass_sum += other->mass;
+    }
+
+    this->pos += weighted_normals / mass_sum;
 }
 
 void Particle::reset() {
@@ -107,12 +135,14 @@ void World::gravitate() {
 void World::step(float dt) {
     reset();
     find_intersections();
-
     solve_intersections();
+
     gravitate();
     solve_contacts();
 
-    integrate(dt);
+    for (int i = 0; i < 3; i++) {
+        integrate(dt / 3);
+    }
 }
 
 void World::reset() {
@@ -146,30 +176,32 @@ void World::find_intersections() {
 }
 
 void World::solve_intersections() {
-    std::sort(contacts.begin(), contacts.end(), ContactDepthComparator());
-    for (auto &c : contacts) {
-        c.deintersect();
+    for (auto p : particles) {
+        p->deintersect();
     }
 }
 
 void World::solve_contacts() {
     for (int i = 0; i < contacts.size(); i++) {
         for (auto c : contacts) {
-            c.solve_momentum();
+            c.solve_momentum(0);
         }
     }
     for (auto c : contacts) {
+        c.calculate_normal_force();
+    }
+    for (auto c : contacts) {
         c.apply_normal_force();
-        //c.solve_friction();
     }
 }
 
-void World::deintersect_all() {
+bool World::deintersect_all(int max_steps) {
     do {
         contacts.clear();
         find_intersections();
         solve_intersections();
-    } while (!contacts.empty());
+    } while (!contacts.empty() && max_steps-- > 0);
+    return contacts.empty();
 }
 
 void World::create_groups() {
@@ -177,7 +209,7 @@ void World::create_groups() {
 
 }
 
-void Contact::solve_momentum() {
+void Contact::solve_momentum(float dt) {
     // Calculate with b as reference frame.
     auto va = a->vel - b->vel;
 
@@ -208,6 +240,9 @@ void Contact::solve_momentum() {
     dvb *= vb_final;
     a->vel = va_tangent + dva + b->vel;
     b->vel += dvb;
+
+    a->pos += a->vel * dt;
+    b->pos += b->vel * dt;
 }
 
 bool Contact::operator==(Contact other) const {
@@ -227,31 +262,16 @@ Contact::Contact(Particle *a, Particle *b, glm::vec3 normal)
 
 }
 
-void Contact::solve_friction() {
-    /*
-    // Once again, using b as reference frame.
-    // Note that normal points from b -> a
-    vec3 unit_normal = normalize(normal);
-    vec3 va = a->vel - b->vel;
-    float va_normal = dot(unit_normal, va);  // va's normal component
-    vec3 va_tangent = va - unit_normal * va_normal;
-    vec3 unit_va_tangent = normalize(va_tangent);
-
-    // Normal force
-    float normal_mag = dot(a->force - b->force, unit_normal);
-    vec3 tangent_force = dot(a->force - b->force, unit_normal);
-
-    // Friction
-    float friction_mag = normal_mag * 0.5f;
-    vec3 force = unit_va_tangent * friction_mag;
-
-    a->force -= force;
-    b->force += force;*/
+void Contact::calculate_normal_force() {
+    normal_force_mag = dot(b->force - a->force, unit_normal);
+    normal_force = unit_normal * normal_force_mag;
+    pushing = normal_force_mag < 0;
 }
 
 void Contact::apply_normal_force() {
-    a->force = a->force - unit_normal * dot(a->force, unit_normal);
-    b->force = b->force - unit_normal * dot(b->force, unit_normal);
+    if (!pushing) return;
+    a->force += normal_force;
+    b->force -= normal_force;
 }
 
 void Body::integrate(float dt) {

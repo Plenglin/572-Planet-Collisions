@@ -22,13 +22,21 @@ struct Contact {
     Particle *a, *b;
     // Collision normal oriented from b to a
     glm::vec3 normal, unit_normal;
-    bool approaching;
+    // Intermediate calculations
+    glm::vec3 normal_force;
+    float normal_force_mag;
+    // Are the particles moving into each other?
+    bool approaching = false;
+    // Are the particles being pushed into each other?
+    bool pushing = false;
 
     void deintersect() const;
-    void solve_momentum();
-    void solve_friction();
-    void apply_normal_force();
+    void solve_momentum(float dt);
+    void apply_friction();
+    void calculate_normal_force();
     bool operator==(Contact other) const;
+
+    void apply_normal_force();
 };
 
 // For sorting the contacts in deepest to shallowest order
@@ -69,7 +77,10 @@ struct Particle {
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
     bool is_touching(Particle *other, glm::vec3 *normal);
-    void solve_contacts();
+
+    // Attempts to deintersect this particle alone, given the contacts.
+    // May not fully succeed.
+    void deintersect();
 
     void reset();
 
@@ -107,7 +118,8 @@ struct World {
     World();
 
     void reset();
-    void deintersect_all();
+    // Returns false if there are still things to deintersect.
+    bool deintersect_all(int max_steps);
 
     void find_intersections();
     void solve_intersections();

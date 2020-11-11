@@ -321,20 +321,22 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		for (int i = 0; i < 100; i++) {
-            auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
-
-			auto *particle = new Particle();
-			particle->pos = pos;
-			//particle->vel = ;
-			particle->mass = 1;
-			particle->radius = 0.25;
-
-            world.particles.push_back(particle);
-        }
-		world.deintersect_all();
-
 		/*
+		do {
+		    world.particles.clear();
+            for (int i = 0; i < 3; i++) {
+                auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
+
+                auto *particle = new Particle();
+                particle->pos = pos;
+                //particle->vel = ;
+                particle->mass = 1;
+                particle->radius = 0.25;
+
+                world.particles.push_back(particle);
+            }
+        } while (world.deintersect_all(10));*/
+
 		Particle *p = new Particle();
         p->pos = vec3(0, 2,-20);
         p->vel = vec3(0, -0,0);
@@ -352,7 +354,7 @@ public:
         p->vel = vec3(0, 0, 0);
         p->radius = 1;
         p->mass = 1;
-        world.particles.push_back(p);*/
+        world.particles.push_back(p);
     }
 
 	//General OGL initialization - set OGL state here
@@ -467,23 +469,11 @@ public:
 		// ...but we overwrite it (optional) with a perspective projection.
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
-
-
-		//animation with the model matrix:
-		static float w = 0.0;
-		w += 1.0 * frametime;//rotation angle
-		float trans = 0;// sin(t) * 2;
-		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-		float angle = -3.1415926 / 2.0;
-		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-
 		// Draw the box using GLSL.
 		prog->bind();
 
 		V = mycam.process(frametime);
 		//send the matrices to the shaders
-
-
 
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
@@ -496,7 +486,7 @@ public:
 			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), world.particles[i]->pos);
 			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(world.particles[i]->radius));
 
-			M = TransZ * RotateY * RotateX * S;
+			M = TransZ * S;
 			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 			glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
