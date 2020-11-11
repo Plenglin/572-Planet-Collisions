@@ -39,29 +39,33 @@ void Particle::reset() {
     group = nullptr;
 }
 
-GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> visited) {
+GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisited) {
     std::vector<Particle*> touching{this};
     if (contacts.empty()) {
         return GroupSearchData { true, touching };
     }
 
     std::vector<Particle*> to_visit{this};
-    visited.insert(this);
+    unvisited.erase(this);
     bool stable = true;
     while (!to_visit.empty()) {
         // Pop element
-        auto particle = to_visit.back();
+        auto *particle = to_visit.back();
         to_visit.pop_back();
-        if (visited.find(particle) != visited.end()) {
+
+        // We have visited this?
+        if (unvisited.find(particle) == unvisited.end()) {
             continue;
         }
+        unvisited.erase(particle);
 
         // Check neighbors
         for (auto &neighbor_pair : particle->contacts) {
+            // If not approaching, then unstable
             if (!neighbor_pair.second->approaching) {
                 stable = false;
             }
-            auto neighbor = neighbor_pair.first;
+            auto *neighbor = neighbor_pair.first;
             to_visit.push_back(neighbor);
             touching.push_back(neighbor);
         }
@@ -160,6 +164,7 @@ void World::deintersect_all() {
 }
 
 void World::create_groups() {
+    std::unordered_set<Particle*> unvisited(particles.begin(), particles.end());
 
 }
 

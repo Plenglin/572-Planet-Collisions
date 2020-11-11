@@ -72,7 +72,7 @@ struct Particle {
     void reset();
 
     // DFS for particles in this group
-    GroupSearchData get_group_members(std::unordered_set<Particle *> visited);
+    GroupSearchData get_group_members(std::unordered_set<Particle *> unvisited);
 };
 
 // Represents a bunch of particles touching each other.
