@@ -7,11 +7,14 @@
 #include "World.h"
 
 #define G 30
+#define u_S 1f
+#define u_K 0.5f
+#define RESTITUTION 0.3f
 
 using namespace glm;
 
 void Particle::integrate(float dt) {
-    vel += impulse / mass;
+    vel += force * dt / mass;
     pos += vel * dt;
 }
 
@@ -34,7 +37,7 @@ void Particle::solve_contacts() {
 }
 
 void Particle::reset() {
-    impulse = vec3(0, 0, 0);
+    force = vec3(0, 0, 0);
     contacts.clear();
     group = nullptr;
 }
@@ -82,7 +85,7 @@ void World::integrate(float dt) {
     }
 }
 
-void World::gravitate(float dt) {
+void World::gravitate() {
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
         for (auto itb = particles.begin(); itb != ita; itb++) {
@@ -92,15 +95,11 @@ void World::gravitate(float dt) {
             if (dist2 < 1e-5)
                 continue;
 
-            auto contact = a->contacts.find(b);
-            if (contact != a->contacts.end() && contact->second->approaching)
-                continue;
-
             vec3 unit_r = normalize(r);
-            float specific_acc = G / dist2;
+            float force_mag = G * a->mass * b->mass / dist2;
 
-            a->vel -= dt * unit_r * specific_acc * b->mass;
-            b->vel += dt * unit_r * specific_acc * a->mass;
+            a->force -= unit_r * force_mag;
+            b->force += unit_r * force_mag;
         }
     }
 }
@@ -108,10 +107,11 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     reset();
     find_intersections();
+
     solve_intersections();
+    gravitate();
     solve_contacts();
 
-    gravitate(dt);
     integrate(dt);
 }
 
@@ -158,6 +158,10 @@ void World::solve_contacts() {
             c.solve_momentum();
         }
     }
+    for (auto c : contacts) {
+        c.apply_normal_force();
+        //c.solve_friction();
+    }
 }
 
 void World::deintersect_all() {
@@ -174,11 +178,10 @@ void World::create_groups() {
 }
 
 void Contact::solve_momentum() {
-    // Calculate with b as reference frame at rest.
+    // Calculate with b as reference frame.
     auto va = a->vel - b->vel;
 
     // Note that normal points from b -> a
-    auto unit_normal = normalize(normal);
     auto va_normal = dot(unit_normal, va);  // va's normal component
 
     // Do nothing if a is leaving b
@@ -190,7 +193,7 @@ void Contact::solve_momentum() {
     auto pa = a->mass * va_normal;
 
     // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
-    auto va_final = (pa - b->mass * 0.9 * va_normal) / (a->mass + b->mass);
+    auto va_final = (pa - b->mass * RESTITUTION * va_normal) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
     auto pb_final = pa - pa_final;
     auto vb_final = pb_final / b->mass;
@@ -219,8 +222,36 @@ void Contact::deintersect() const {
     b->pos -= b_deflection;
 }
 
-Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), normal(normal), approaching(false) {
+Contact::Contact(Particle *a, Particle *b, glm::vec3 normal)
+    : a(a), b(b), normal(normal), unit_normal(normalize(normal)), approaching(false) {
 
+}
+
+void Contact::solve_friction() {
+    /*
+    // Once again, using b as reference frame.
+    // Note that normal points from b -> a
+    vec3 unit_normal = normalize(normal);
+    vec3 va = a->vel - b->vel;
+    float va_normal = dot(unit_normal, va);  // va's normal component
+    vec3 va_tangent = va - unit_normal * va_normal;
+    vec3 unit_va_tangent = normalize(va_tangent);
+
+    // Normal force
+    float normal_mag = dot(a->force - b->force, unit_normal);
+    vec3 tangent_force = dot(a->force - b->force, unit_normal);
+
+    // Friction
+    float friction_mag = normal_mag * 0.5f;
+    vec3 force = unit_va_tangent * friction_mag;
+
+    a->force -= force;
+    b->force += force;*/
+}
+
+void Contact::apply_normal_force() {
+    a->force = a->force - unit_normal * dot(a->force, unit_normal);
+    b->force = b->force - unit_normal * dot(b->force, unit_normal);
 }
 
 void Body::integrate(float dt) {

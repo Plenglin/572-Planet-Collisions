@@ -21,11 +21,13 @@ struct Contact {
 
     Particle *a, *b;
     // Collision normal oriented from b to a
-    glm::vec3 normal;
+    glm::vec3 normal, unit_normal;
     bool approaching;
 
     void deintersect() const;
     void solve_momentum();
+    void solve_friction();
+    void apply_normal_force();
     bool operator==(Contact other) const;
 };
 
@@ -59,7 +61,7 @@ struct Particle {
     // State
     glm::vec3 pos, vel;
     // Accumulator
-    glm::vec3 impulse;
+    glm::vec3 force;
     std::unordered_map<Particle*, Contact*> contacts;
     ContactGroup *group;
 
@@ -111,7 +113,7 @@ struct World {
     void solve_intersections();
     void solve_contacts();
     void create_groups();
-    void gravitate(float dt);
+    void gravitate();
     void integrate(float dt);
 
     void step(float dt);
