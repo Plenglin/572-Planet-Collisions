@@ -108,6 +108,7 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     reset();
     find_intersections();
+    solve_intersections();
     solve_contacts();
 
     gravitate(dt);
@@ -123,6 +124,7 @@ void World::reset() {
 
 void World::find_intersections() {
     // Find all contacts
+    
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
         for (auto itb = particles.begin(); itb != ita; itb++) {
@@ -134,10 +136,13 @@ void World::find_intersections() {
 
             auto contact = Contact(a, b, normal);
             contacts.push_back(contact);  // union of contacts for all iterations
-            a->contacts[b] = (&*contacts.end());
-            b->contacts[a] = (&*contacts.end());
+            auto *ptr = &contacts.back();
+            a->contacts[b] = ptr;
+            b->contacts[a] = ptr;
+
         }
     }
+    
 }
 
 void World::solve_intersections() {

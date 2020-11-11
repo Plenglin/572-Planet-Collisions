@@ -328,7 +328,7 @@ public:
 			particle->pos = pos;
 			//particle->vel = ;
 			particle->mass = 1;
-			particle->radius = 0.5;
+			particle->radius = 0.25;
 
             world.particles.push_back(particle);
         }

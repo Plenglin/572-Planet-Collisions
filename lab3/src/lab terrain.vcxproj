@@ -23,6 +23,7 @@
     <ClCompile Include="GLSL.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
+    <ClCompile Include="physics\World.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="WindowManager.cpp" />
@@ -30,6 +31,7 @@
   <ItemGroup>
     <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />
+    <ClInclude Include="physics\World.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="stb_image.h" />

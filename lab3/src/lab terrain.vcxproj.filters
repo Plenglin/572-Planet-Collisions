@@ -10,6 +10,9 @@
     <ClCompile Include="WindowManager.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="physics\World.cpp">
+      <Filter>physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Program.h" />
@@ -19,6 +22,9 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="physics\World.h">
+      <Filter>physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">
@@ -26,6 +32,9 @@
     </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{f89a65ed-e2a3-436e-a6f9-c4b2604650e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="physics">
+      <UniqueIdentifier>{51da8e7f-0d79-4bac-bcf2-557016c4d856}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
