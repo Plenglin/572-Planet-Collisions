@@ -6,9 +6,8 @@
 #include <algorithm>
 #include "World.h"
 
-#define G 3000
-#define u_S 1.0f
-#define u_K 0.5f
+#define G 30
+#define V_EPSILON 0.1f
 #define RESTITUTION 0.3f
 
 using namespace glm;
@@ -68,41 +67,6 @@ void Particle::reset() {
     force = vec3(0, 0, 0);
     contacts.clear();
     group = nullptr;
-}
-
-GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisited) {
-    std::vector<Particle*> touching{this};
-    if (contacts.empty()) {
-        return GroupSearchData { true, touching };
-    }
-
-    std::vector<Particle*> to_visit{this};
-    unvisited.erase(this);
-    bool stable = true;
-    while (!to_visit.empty()) {
-        // Pop element
-        auto *particle = to_visit.back();
-        to_visit.pop_back();
-
-        // We have visited this?
-        if (unvisited.find(particle) == unvisited.end()) {
-            continue;
-        }
-        unvisited.erase(particle);
-
-        // Check neighbors
-        for (auto &neighbor_pair : particle->contacts) {
-            // If not approaching, then unstable
-            if (!neighbor_pair.second->approaching) {
-                stable = false;
-            }
-            auto *neighbor = neighbor_pair.first;
-            to_visit.push_back(neighbor);
-            touching.push_back(neighbor);
-        }
-    }
-
-    return GroupSearchData {stable, touching};
 }
 
 World::World() = default;
@@ -195,15 +159,6 @@ void World::solve_contacts() {
     }
 }
 
-bool World::deintersect_all(int max_steps) {
-    do {
-        contacts.clear();
-        find_intersections();
-        solve_intersections();
-    } while (!contacts.empty() && max_steps-- > 0);
-    return contacts.empty();
-}
-
 void World::create_groups() {
     std::unordered_set<Particle*> unvisited(particles.begin(), particles.end());
 
@@ -212,9 +167,11 @@ void World::create_groups() {
 void Contact::solve_momentum(float dt) {
     // Calculate with b as reference frame.
     auto va = a->vel - b->vel;
-
     // Note that normal points from b -> a
     auto va_normal = dot(unit_normal, va);  // va's normal component
+    // Tangent velocity
+    auto va_tangent = va - unit_normal * va_normal;
+    auto va_tangent_mag = length(va_tangent);
 
     // Do nothing if a is leaving b
     if (va_normal > 0) {
@@ -230,31 +187,23 @@ void Contact::solve_momentum(float dt) {
     auto pb_final = pa - pa_final;
     auto vb_final = pb_final / b->mass;
 
-    // Tangent velocity
-    auto va_tangent = va - unit_normal * va_normal;
-
     // Perform impulse calculation
-    auto dva = unit_normal;
-    dva *= va_final;
+    auto relative_dva = unit_normal;
+    relative_dva *= va_final;
     auto dvb = unit_normal;
     dvb *= vb_final;
-    a->vel = va_tangent + dva + b->vel;
+    auto dva = relative_dva + b->vel;
+    a->vel = va_tangent + dva;
     b->vel += dvb;
 
-    a->pos += a->vel * dt;
-    b->pos += b->vel * dt;
+    if (va_tangent_mag < V_EPSILON) {
+        a->vel = unit_normal * dot(unit_normal, a->vel);
+        b->vel = unit_normal * dot(unit_normal, b->vel);
+    }
 }
 
 bool Contact::operator==(Contact other) const {
     return a == other.a && b == other.b;
-}
-
-void Contact::deintersect() const {
-    // De-intersect particles
-    auto a_deflection = normal * b->mass / (a->mass + b->mass);
-    auto b_deflection = normal - a_deflection;
-    a->pos += a_deflection;
-    b->pos -= b_deflection;
 }
 
 Contact::Contact(Particle *a, Particle *b, glm::vec3 normal)

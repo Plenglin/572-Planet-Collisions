@@ -30,7 +30,6 @@ struct Contact {
     // Are the particles being pushed into each other?
     bool pushing = false;
 
-    void deintersect() const;
     void solve_momentum(float dt);
     void apply_friction();
     void calculate_normal_force();
@@ -83,9 +82,6 @@ struct Particle {
     void deintersect();
 
     void reset();
-
-    // DFS for particles in this group
-    GroupSearchData get_group_members(std::unordered_set<Particle *> unvisited);
 };
 
 // Represents a bunch of particles touching each other.
@@ -118,8 +114,6 @@ struct World {
     World();
 
     void reset();
-    // Returns false if there are still things to deintersect.
-    bool deintersect_all(int max_steps);
 
     void find_intersections();
     void solve_intersections();

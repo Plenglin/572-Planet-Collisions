@@ -341,19 +341,19 @@ public:
         p->pos = vec3(0, 2,-20);
         p->vel = vec3(0, -0,0);
         p->radius = 1;
-        p->mass = 1;
+        p->mass = 10;
 		world.particles.push_back(p);
         p = new Particle();
         p->pos = vec3(0, -2, -20);
         p->vel = vec3(0, 0,0);
         p->radius = 1;
-        p->mass = 2;
+        p->mass = 20;
         world.particles.push_back(p);
         p = new Particle();
         p->pos = vec3(-2, 0, -20);
         p->vel = vec3(0, 0, 0);
         p->radius = 1;
-        p->mass = 1;
+        p->mass = 10;
         world.particles.push_back(p);
     }
 
