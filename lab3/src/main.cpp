@@ -99,7 +99,7 @@ class Application : public EventCallbacks
 {
 
 public:
-	World world;
+	std::unique_ptr<World> world;
 
 	WindowManager* windowManager = nullptr;
 
@@ -320,42 +320,7 @@ public:
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		/*
-		do {
-		    world.particles.clear();
-            for (int i = 0; i < 3; i++) {
-                auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
-
-                auto *particle = new Particle();
-                particle->pos = pos;
-                //particle->vel = ;
-                particle->mass = 1;
-                particle->radius = 0.25;
-
-                world.particles.push_back(particle);
-            }
-        } while (world.deintersect_all(10));*/
-
-		Particle *p = new Particle();
-        p->pos = vec3(0, 2,-20);
-        p->vel = vec3(0, -0,0);
-        p->radius = 1;
-        p->mass = 10;
-		world.particles.push_back(p);
-        p = new Particle();
-        p->pos = vec3(0, -2, -20);
-        p->vel = vec3(0, 0,0);
-        p->radius = 1;
-        p->mass = 20;
-        world.particles.push_back(p);
-        p = new Particle();
-        p->pos = vec3(-2, 0, -20);
-        p->vel = vec3(0, 0, 0);
-        p->radius = 1;
-        p->mass = 10;
-        world.particles.push_back(p);
-    }
+	}
 
 	//General OGL initialization - set OGL state here
 	void init(const std::string& resourceDirectory)
@@ -399,36 +364,51 @@ public:
 		heightshader->addAttribute("vertPos");
 		heightshader->addAttribute("vertTex");
 
+		ForceFieldProgram p = ForceFieldProgram("../resources/field_gravity.glsl");
+
+		//world = std::unique_ptr<World>(new World());
+		//world->objects.emplace_back(1, 1, vec3(0, 0, 0), vec3(0, 0, 0));
+		//-world->refresh_objects();
+        /*
+do {
+    world.particles.clear();
+    for (int i = 0; i < 20; i++) {
+        auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
+
+        auto *particle = new Particle();
+        particle->pos = pos;
+        //particle->vel = ;
+        particle->mass = 1;
+        particle->radius = 0.25;
+
+        world.particles.push_back(particle);
+    }
+} while (world.deintersect_all(10));*/
 
 
-		std::string ShaderString = readFileAsString("../resources/compute.glsl");
-		const char* shader = ShaderString.c_str();
-		GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
-		glShaderSource(computeShader, 1, &shader, nullptr);
-
-		GLint rc;
-		CHECKED_GL_CALL(glCompileShader(computeShader));
-		CHECKED_GL_CALL(glGetShaderiv(computeShader, GL_COMPILE_STATUS, &rc));
-		if (!rc)	//error compiling the shader file
-		{
-			GLSL::printShaderInfoLog(computeShader);
-			std::cout << "Error compiling fragment shader " << std::endl;
-			exit(1);
-		}
-
-		computeProgram = glCreateProgram();
-		glAttachShader(computeProgram, computeShader);
-		glLinkProgram(computeProgram);
-		glUseProgram(computeProgram);
-
-		GLuint block_index;
-		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-		GLuint ssbo_binding_point_index = 2;
-		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
-	}
+        /*
+        Particle *p = new Particle();
+        p->pos = vec3(0, 2,-20);
+        p->vel = vec3(0, -0,0);
+        p->radius = 1;
+        p->mass = 10;
+        world.particles.push_back(p);
+        p = new Particle();
+        p->pos = vec3(0, -2, -20);
+        p->vel = vec3(0, 0,0);
+        p->radius = 1;
+        p->mass = 20;
+        world.particles.push_back(p);
+        p = new Particle();
+        p->pos = vec3(-2, 0, -20);
+        p->vel = vec3(0, 0, 0);
+        p->radius = 1;
+        p->mass = 10;
+        world.particles.push_back(p);*/
+    }
 	
 	void compute(double frametime) {
-        world.step(0.005);
+        world->step(0.01);
     }
 
 	/****DRAW
@@ -482,9 +462,9 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, HeightTex);
 
-		for (int i = 0; i < world.particles.size(); i++) {
-			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), world.particles[i]->pos);
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(world.particles[i]->radius));
+		for (int i = 0; i < world->objects.size(); i++) {
+			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), world->objects[i].pos);
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(world->objects[i].radius));
 
 			M = TransZ * S;
 			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
