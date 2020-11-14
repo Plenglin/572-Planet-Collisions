@@ -20,8 +20,10 @@ struct Contact {
     Contact(Particle *pParticle, Particle *pParticle1, glm::vec3 vec);
 
     Particle *a, *b;
+    bool stable = false;
     // Collision normal oriented from b to a
     glm::vec3 normal;
+    unsigned long lifetime = 0;
     bool approaching;
 
     void deintersect() const;
@@ -101,6 +103,7 @@ struct World {
     // The set of contacts.
     std::vector<Contact> contacts;
     std::vector<ContactGroup> groups;
+    unsigned long steps = 0;
 
     World();
 

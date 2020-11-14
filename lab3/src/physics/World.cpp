@@ -108,27 +108,42 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     reset();
     find_intersections();
-    solve_intersections();
+    //solve_intersections();
     solve_contacts();
 
     gravitate(dt);
     integrate(dt);
+    steps++;
 }
 
 void World::reset() {
     for (auto &p : particles) {
         p->reset();
     }
-    contacts.clear();
 }
 
 void World::find_intersections() {
+    for (auto it = contacts.begin(); it != contacts.end();) {
+        vec3 normal;
+        if (!it->a->is_touching(it->b, &normal)) {
+            it->a->contacts.erase(it->b);
+            it->b->contacts.erase(it->a);
+            it = contacts.erase(it);
+            continue;
+        }
+        it->normal = normal;
+        it->lifetime++;
+        ++it;
+    }
+
     // Find all contacts
-    
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
         for (auto itb = particles.begin(); itb != ita; itb++) {
             auto *b = *itb;
+
+            if (a->contacts.find(b) != a->contacts.end())
+                continue;  // Contact already exists
 
             glm::vec3 normal;
             if (!a->is_touching(b, &normal))
@@ -153,9 +168,26 @@ void World::solve_intersections() {
 }
 
 void World::solve_contacts() {
+    // New contacts destabilize
+
+    // Calculate instantaneous momentums
     for (int i = 0; i < contacts.size(); i++) {
         for (auto c : contacts) {
             c.solve_momentum();
+        }
+    }
+
+    // Zero colliding velocities if they haven't been zeroed yet
+    for (auto c : contacts) {
+        auto dv = c.a->vel - c.b->vel;
+        if (dot(dv, c.normal) < 0) {
+            auto pa = c.a->vel * c.a->mass;
+            auto pb = c.b->vel * c.b->mass;
+            auto pnet = pa + pb;
+            auto unit_pnet = normalize(pnet);
+
+            c.a->vel = c.a->vel * unit_pnet * dot(unit_pnet, c.a->vel);
+            c.b->vel = c.b->vel * unit_pnet * dot(unit_pnet, c.b->vel);
         }
     }
 }
@@ -169,8 +201,19 @@ void World::deintersect_all() {
 }
 
 void World::create_groups() {
+    if (particles.empty()) return;
+
     std::unordered_set<Particle*> unvisited(particles.begin(), particles.end());
 
+    while (!unvisited.empty()) {
+        auto p = *unvisited.begin();
+        unvisited.erase(p);
+
+        auto result = p->get_group_members(unvisited);
+        if (result.stable) {
+
+        }
+    }
 }
 
 void Contact::solve_momentum() {
