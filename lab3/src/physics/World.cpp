@@ -19,7 +19,10 @@ void Particle::integrate(float dt) {
     ang_vel += ang_impulse / moi;
 
     pos += vel * dt;
-    rot = rotate(glm::mat4(1.0f), length(ang_vel) * dt, normalize(ang_vel)) * rot;
+    auto ang_vel_mag = length(ang_vel);
+    if (ang_vel_mag > 1e-3) {
+        rot = rotate(glm::mat4(1.0f), ang_vel_mag * dt, ang_vel / ang_vel_mag) * rot;
+    }
 }
 
 void Particle::apply_acc(glm::vec3 r, glm::vec3 da) {
