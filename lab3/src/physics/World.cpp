@@ -12,7 +12,8 @@
 using namespace glm;
 
 void Particle::integrate(float dt) {
-    vel += impulse / mass;
+    auto acc = gravity * dt / mass;
+    vel += acc + impulse / mass;
     pos += vel * dt;
 }
 
@@ -86,6 +87,10 @@ void World::integrate(float dt) {
 }
 
 void World::gravitate(float dt) {
+    for (auto &p : particles) {
+        p->gravity = vec3(0, 0, 0);
+    }
+
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
         for (auto itb = particles.begin(); itb != ita; itb++) {
@@ -100,10 +105,10 @@ void World::gravitate(float dt) {
                 continue;
 
             vec3 unit_r = normalize(r);
-            float specific_acc = G / dist2;
-
-            a->vel -= dt * unit_r * specific_acc * b->mass;
-            b->vel += dt * unit_r * specific_acc * a->mass;
+            float mag = G * a->mass * b->mass / dist2;
+            vec3 force = unit_r * mag;
+            a->gravity -= force;
+            b->gravity += force;
         }
     }
 }
@@ -244,10 +249,10 @@ void Contact::solve_momentum() {
     // If small relative velocity, it's "stable" and do nothing
     if (dot(va, va) < 0.03) {
         state = CONTACT_STATE_STABLE;
-        a->group->mark_unstable();
         return;
     }
 
+    a->group->mark_unstable();
     state = CONTACT_STATE_APPROACHING;
     auto pa = a->mass * va_normal;
 

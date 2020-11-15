@@ -70,6 +70,8 @@ struct Particle {
     glm::vec3 pos, vel;
     // Accumulator
     glm::vec3 impulse;
+    // Force
+    glm::vec3 gravity;
     std::unordered_map<Particle*, Contact*> contacts;
     ContactGroup *group;
 
