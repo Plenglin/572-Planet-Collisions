@@ -469,35 +469,19 @@ public:
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
 
-
-		//animation with the model matrix:
-		static float w = 0.0;
-		w += 1.0 * frametime;//rotation angle
-		float trans = 0;// sin(t) * 2;
-		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-		float angle = -3.1415926 / 2.0;
-		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-
 		// Draw the box using GLSL.
 		prog->bind();
 
 		V = mycam.process(frametime);
 		//send the matrices to the shaders
 
+		for (auto & particle : world.particles) {
+			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), particle->pos);
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(particle->radius));
 
+			glm::mat4 rot = particle->rot;
 
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-
-		for (int i = 0; i < world.particles.size(); i++) {
-			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), world.particles[i]->pos);
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(world.particles[i]->radius));
-
-			M = TransZ * RotateY * RotateX * S;
+			M = TransZ * rot * S;
 			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 			glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
