@@ -7,7 +7,7 @@
 #include "World.h"
 
 #define G 10
-#define RESTITUTION 0.1
+#define RESTITUTION 1
 
 using namespace glm;
 
@@ -20,14 +20,19 @@ void Particle::apply_acc(glm::vec3 r, glm::vec3 da) {
     vel += da;
 }
 
-bool Particle::is_touching(Particle *b, glm::vec3 *normal) {
+bool Particle::is_touching(Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
     vec3 delta = pos - b->pos;
     float dist = length(delta);
+    vec3 unit_delta = delta / dist;
     float radius_sum = radius + b->radius;
     float depth = radius_sum - dist;
-    if (normal != nullptr)
+    if (normal != nullptr) {
         *normal = normalize(delta) * depth;
-
+    }
+    if (cpos != nullptr) {
+        auto center_dist = radius - depth / 2;
+        *cpos = pos + unit_delta * center_dist;
+    }
     return depth >= 0;
 }
 
@@ -124,7 +129,7 @@ void World::reset() {
 
 void World::find_intersections() {
     for (auto it = contacts.begin(); it != contacts.end();) {
-        if (!it->a->is_touching(it->b, &it->normal)) {
+        if (!it->a->is_touching(it->b, &it->normal, nullptr)) {
             it->a->contacts.erase(it->b);
             it->b->contacts.erase(it->a);
             it = contacts.erase(it);
@@ -143,11 +148,11 @@ void World::find_intersections() {
             if (a->contacts.find(b) != a->contacts.end())
                 continue;  // Contact already exists
 
-            glm::vec3 normal;
-            if (!a->is_touching(b, &normal))
+            glm::vec3 normal, cpos;
+            if (!a->is_touching(b, &normal, &cpos))
                 continue;
 
-            contacts.emplace_back(a, b, normal);  // union of contacts for all iterations
+            contacts.emplace_back(a, b, normal, cpos);  // union of contacts for all iterations
             auto *ptr = &contacts.back();
             a->contacts[b] = ptr;
             b->contacts[a] = ptr;
@@ -250,16 +255,16 @@ void Contact::solve_momentum() {
     auto pb_final = pa - pa_final;
     auto vb_final = pb_final / b->mass;
 
-    // Tangent velocity
+    auto linear_imp_mag = pa_final - pa;
+    auto linear_imp = unit_normal * linear_imp_mag;
+
+    // Tangent velocity and friction
     auto va_tangent = va - unit_normal * va_normal;
+    auto friction = normalize(va_tangent) ;
 
     // Perform impulse calculation
-    auto dva = unit_normal;
-    dva *= va_final;
-    auto dvb = unit_normal;
-    dvb *= vb_final;
-    a->vel = va_tangent + dva + b->vel;
-    b->vel += dvb;
+    a->vel += linear_imp / a->mass;
+    b->vel -= linear_imp / b->mass;
 }
 
 bool Contact::operator==(Contact other) const {
@@ -274,7 +279,7 @@ void Contact::deintersect() const {
     b->pos -= b_deflection;
 }
 
-Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), normal(normal) {
+Contact::Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos) : a(a), b(b), normal(normal), pos(pos) {
 
 }
 

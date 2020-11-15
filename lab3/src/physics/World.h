@@ -23,11 +23,11 @@ enum ContactState {
 };
 
 struct Contact {
-    Contact(Particle *pParticle, Particle *pParticle1, glm::vec3 vec);
+    Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos);
 
     Particle *a, *b;
     // Collision normal oriented from b to a
-    glm::vec3 normal;
+    glm::vec3 normal, pos;
     unsigned long lifetime = 0;
     ContactState state = CONTACT_STATE_APPROACHING;
 
@@ -64,16 +64,17 @@ struct GroupSearchData {
 
 struct Particle {
     // State
-    glm::vec3 pos, vel;
+    glm::vec3 pos, vel, ang_vel;
+    glm::mat4 rot;
     // Accumulator
-    glm::vec3 impulse;
+    glm::vec3 impulse, ang_impulse;
     std::unordered_map<Particle*, Contact*> contacts;
     ContactGroup *group;
 
-    float mass, radius;
+    float mass, radius, moi;
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
-    bool is_touching(Particle *other, glm::vec3 *normal);
+    bool is_touching(Particle *other, glm::vec3 *normal, glm::vec3 *cpos);
     void solve_contacts();
 
     void reset();
