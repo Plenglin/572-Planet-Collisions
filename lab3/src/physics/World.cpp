@@ -36,7 +36,6 @@ void Particle::solve_contacts() {
 
 void Particle::reset() {
     impulse = vec3(0, 0, 0);
-    contacts.clear();
     group = nullptr;
 }
 
@@ -63,7 +62,7 @@ GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisi
         // Check neighbors
         for (auto &neighbor_pair : particle->contacts) {
             // If not approaching, then unstable
-            if (!neighbor_pair.second->approaching) {
+            if (neighbor_pair.second->state != CONTACT_STATE_STABLE) {
                 stable = false;
             }
             auto *neighbor = neighbor_pair.first;
@@ -94,7 +93,7 @@ void World::gravitate(float dt) {
                 continue;
 
             auto contact = a->contacts.find(b);
-            if (contact != a->contacts.end() && contact->second->approaching)
+            if (contact != a->contacts.end() && contact->second->state == CONTACT_STATE_APPROACHING)
                 continue;
 
             vec3 unit_r = normalize(r);
@@ -125,14 +124,12 @@ void World::reset() {
 
 void World::find_intersections() {
     for (auto it = contacts.begin(); it != contacts.end();) {
-        vec3 normal;
-        if (!it->a->is_touching(it->b, &normal)) {
+        if (!it->a->is_touching(it->b, &it->normal)) {
             it->a->contacts.erase(it->b);
             it->b->contacts.erase(it->a);
             it = contacts.erase(it);
             continue;
         }
-        it->normal = normal;
         it->lifetime++;
         ++it;
     }
@@ -150,8 +147,7 @@ void World::find_intersections() {
             if (!a->is_touching(b, &normal))
                 continue;
 
-            auto contact = Contact(a, b, normal);
-            contacts.push_back(contact);  // union of contacts for all iterations
+            contacts.emplace_back(a, b, normal);  // union of contacts for all iterations
             auto *ptr = &contacts.back();
             a->contacts[b] = ptr;
             b->contacts[a] = ptr;
@@ -222,6 +218,10 @@ void World::create_groups() {
 }
 
 void Contact::solve_momentum() {
+    if (state == CONTACT_STATE_STABLE) {
+        return;
+    }
+
     // Calculate with b as reference frame at rest.
     auto va = a->vel - b->vel;
 
@@ -229,15 +229,19 @@ void Contact::solve_momentum() {
     auto unit_normal = normalize(normal);
     auto va_normal = dot(unit_normal, va);  // va's normal component
 
-    // Do nothing if a is leaving b
+    // If leaving, do nothing
     if (va_normal > 0) {
-        approaching = false;
+        state = CONTACT_STATE_LEAVING;
         return;
     }
 
-    // Call it "stable" and do nothing
+    // If small relative velocity, it's "stable" and do nothing
+    if (dot(va, va) < 0.03) {
+        state = CONTACT_STATE_STABLE;
+        return;
+    }
 
-    approaching = true;
+    state = CONTACT_STATE_APPROACHING;
     auto pa = a->mass * va_normal;
 
     // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
@@ -270,7 +274,7 @@ void Contact::deintersect() const {
     b->pos -= b_deflection;
 }
 
-Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), normal(normal), approaching(false) {
+Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), normal(normal) {
 
 }
 

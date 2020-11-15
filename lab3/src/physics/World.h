@@ -26,11 +26,10 @@ struct Contact {
     Contact(Particle *pParticle, Particle *pParticle1, glm::vec3 vec);
 
     Particle *a, *b;
-    bool stable = false;
     // Collision normal oriented from b to a
     glm::vec3 normal;
     unsigned long lifetime = 0;
-    bool approaching;
+    ContactState state = CONTACT_STATE_APPROACHING;
 
     void deintersect() const;
     void solve_momentum();
