@@ -101,8 +101,13 @@ void World::gravitate(float dt) {
                 continue;
 
             auto contact = a->contacts.find(b);
-            if (contact != a->contacts.end() && contact->second->state == CONTACT_STATE_APPROACHING)
+            if (contact == a->contacts.end()) {
+                // No contact
+
+            } else if (contact->second->state == CONTACT_STATE_APPROACHING) {
+                // Contact, and approaching: don't add anything
                 continue;
+            }
 
             vec3 unit_r = normalize(r);
             float mag = G * a->mass * b->mass / dist2;
