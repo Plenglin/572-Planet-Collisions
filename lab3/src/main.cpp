@@ -341,7 +341,7 @@ public:
         p->vel = vec3(0, -0,0);
         p->radius = 1;
         p->mass = 1;
-		//world.particles.push_back(p);
+		world.particles.push_back(p);
         p = new Particle();
         p->pos = vec3(0, -2, -20);
         p->vel = vec3(0, 0,0);

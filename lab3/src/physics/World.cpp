@@ -6,7 +6,8 @@
 #include <algorithm>
 #include "World.h"
 
-#define G 30
+#define G 10
+#define RESTITUTION 0.1
 
 using namespace glm;
 
@@ -109,9 +110,9 @@ void World::step(float dt) {
     reset();
     find_intersections();
     //solve_intersections();
-    solve_contacts();
-
     gravitate(dt);
+
+    solve_contacts();
     integrate(dt);
     steps++;
 }
@@ -168,7 +169,7 @@ void World::solve_intersections() {
 }
 
 void World::solve_contacts() {
-    // New contacts destabilize
+    // New contacts destabilize their contact group
 
     // Calculate instantaneous momentums
     for (int i = 0; i < contacts.size(); i++) {
@@ -184,6 +185,10 @@ void World::solve_contacts() {
             auto pa = c.a->vel * c.a->mass;
             auto pb = c.b->vel * c.b->mass;
             auto pnet = pa + pb;
+            if (dot(pnet, pnet) < 1e-5) {
+                c.a->vel = c.b->vel = vec3(0, 0, 0);
+                continue;
+            }
             auto unit_pnet = normalize(pnet);
 
             c.a->vel = c.a->vel * unit_pnet * dot(unit_pnet, c.a->vel);
@@ -229,11 +234,14 @@ void Contact::solve_momentum() {
         approaching = false;
         return;
     }
+
+    // Call it "stable" and do nothing
+
     approaching = true;
     auto pa = a->mass * va_normal;
 
     // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
-    auto va_final = (pa - b->mass * 0.9 * va_normal) / (a->mass + b->mass);
+    auto va_final = (pa - b->mass * RESTITUTION * va_normal) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
     auto pb_final = pa - pa_final;
     auto vb_final = pb_final / b->mass;

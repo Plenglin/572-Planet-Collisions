@@ -16,6 +16,12 @@
 
 struct Particle;
 
+enum ContactState {
+    CONTACT_STATE_APPROACHING,
+    CONTACT_STATE_STABLE,
+    CONTACT_STATE_LEAVING
+};
+
 struct Contact {
     Contact(Particle *pParticle, Particle *pParticle1, glm::vec3 vec);
 
