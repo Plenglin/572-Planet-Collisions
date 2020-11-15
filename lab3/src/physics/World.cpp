@@ -8,12 +8,18 @@
 
 #define G 10
 #define RESTITUTION 1
+// Essentially the product of (impulse to average normal force) and (friction coefficient)
+#define COLLISION_IMPULSE_TO_FRICTION 10.0f
+#define STABLE_THRESH 0.9
 
 using namespace glm;
 
 void Particle::integrate(float dt) {
     vel += impulse / mass;
+    ang_vel += ang_impulse / moi;
+
     pos += vel * dt;
+    rot = rotate(glm::mat4(1.0f), length(ang_vel) * dt, normalize(ang_vel)) * rot;
 }
 
 void Particle::apply_acc(glm::vec3 r, glm::vec3 da) {
@@ -41,6 +47,7 @@ void Particle::solve_contacts() {
 
 void Particle::reset() {
     impulse = vec3(0, 0, 0);
+    ang_impulse = vec3(0, 0, 0);
     group = nullptr;
 }
 
@@ -77,6 +84,10 @@ GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisi
     }
 
     return GroupSearchData {stable, touching};
+}
+
+Particle::Particle(float mass, float radius) : mass(mass), radius(radius), moi(2.0f/5 * mass * radius * radius) {
+
 }
 
 World::World() = default;
@@ -116,7 +127,7 @@ void World::step(float dt) {
     //solve_intersections();
     gravitate(dt);
 
-    solve_contacts();
+    solve_contacts(dt);
     integrate(dt);
     steps++;
 }
@@ -156,7 +167,6 @@ void World::find_intersections() {
             auto *ptr = &contacts.back();
             a->contacts[b] = ptr;
             b->contacts[a] = ptr;
-
         }
     }
     
@@ -169,13 +179,14 @@ void World::solve_intersections() {
     }
 }
 
-void World::solve_contacts() {
+void World::solve_contacts(float dt) {
     // New contacts destabilize their contact group
 
     // Calculate instantaneous momentums
+    float mdt = dt / contacts.size();
     for (int i = 0; i < contacts.size(); i++) {
         for (auto c : contacts) {
-            c.solve_momentum();
+            c.solve_momentum(mdt);
         }
     }
 
@@ -222,7 +233,7 @@ void World::create_groups() {
     }
 }
 
-void Contact::solve_momentum() {
+void Contact::solve_momentum(float dt) {
     if (state == CONTACT_STATE_STABLE) {
         return;
     }
@@ -241,7 +252,7 @@ void Contact::solve_momentum() {
     }
 
     // If small relative velocity, it's "stable" and do nothing
-    if (dot(va, va) < 0.03) {
+    if (dot(va, va) < (STABLE_THRESH * STABLE_THRESH)) {
         state = CONTACT_STATE_STABLE;
         return;
     }
@@ -252,15 +263,20 @@ void Contact::solve_momentum() {
     // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
     auto va_final = (pa - b->mass * RESTITUTION * va_normal) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
-    auto pb_final = pa - pa_final;
-    auto vb_final = pb_final / b->mass;
 
     auto linear_imp_mag = pa_final - pa;
     auto linear_imp = unit_normal * linear_imp_mag;
 
     // Tangent velocity and friction
     auto va_tangent = va - unit_normal * va_normal;
-    auto friction = normalize(va_tangent) ;
+    auto friction_impulse = normalize(va_tangent) * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt);
+    linear_imp -= friction_impulse;
+
+    // Angular impulse
+    auto ra = pos - a->pos;
+    auto rb = pos - b->pos;
+    a->ang_impulse += cross(ra, friction_impulse);
+    b->ang_impulse -= cross(rb, friction_impulse);
 
     // Perform impulse calculation
     a->vel += linear_imp / a->mass;

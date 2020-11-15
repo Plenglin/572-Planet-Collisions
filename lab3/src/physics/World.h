@@ -32,7 +32,7 @@ struct Contact {
     ContactState state = CONTACT_STATE_APPROACHING;
 
     void deintersect() const;
-    void solve_momentum();
+    void solve_momentum(float dt);
     bool operator==(Contact other) const;
 };
 
@@ -65,13 +65,14 @@ struct GroupSearchData {
 struct Particle {
     // State
     glm::vec3 pos, vel, ang_vel;
-    glm::mat3 rot = glm::mat3(1.0f);
+    glm::mat4 rot = glm::mat4(1.0f);
     // Accumulator
     glm::vec3 impulse, ang_impulse;
     std::unordered_map<Particle*, Contact*> contacts;
     ContactGroup *group;
 
     float mass, radius, moi;
+    Particle(float mass, float radius);
     virtual void integrate(float dt);
     virtual void apply_acc(glm::vec3 r, glm::vec3 da);
     bool is_touching(Particle *other, glm::vec3 *normal, glm::vec3 *cpos);
@@ -118,7 +119,7 @@ struct World {
 
     void find_intersections();
     void solve_intersections();
-    void solve_contacts();
+    void solve_contacts(float dt);
     void create_groups();
     void gravitate(float dt);
     void integrate(float dt);

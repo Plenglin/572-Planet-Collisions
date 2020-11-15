@@ -325,11 +325,8 @@ public:
 		for (int i = 0; i < 30; i++) {
             auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
 
-			auto *particle = new Particle();
+			auto *particle = new Particle(1, 0.25);
 			particle->pos = pos;
-			//particle->vel = ;
-			particle->mass = 1;
-			particle->radius = 0.25;
 
             world.particles.push_back(particle);
         }
@@ -427,7 +424,7 @@ public:
 	}
 	
 	void compute(double frametime) {
-        world.step(0.005);
+        world.step(0.01);
     }
 
 	/****DRAW
