@@ -41,6 +41,7 @@ void Particle::reset() {
 
 GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisited) {
     std::vector<Particle*> touching{this};
+    std::unordered_set<Contact*> edges;
     if (contacts.empty()) {
         return GroupSearchData { true, touching };
     }
@@ -61,6 +62,8 @@ GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisi
 
         // Check neighbors
         for (auto &neighbor_pair : particle->contacts) {
+            edges.insert(neighbor_pair.second);
+
             // If not approaching, then unstable
             if (neighbor_pair.second->state != CONTACT_STATE_STABLE) {
                 stable = false;
@@ -108,6 +111,7 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     reset();
     find_intersections();
+    create_groups();
     //solve_intersections();
     gravitate(dt);
 
@@ -117,6 +121,7 @@ void World::step(float dt) {
 }
 
 void World::reset() {
+    groups.clear();
     for (auto &p : particles) {
         p->reset();
     }
@@ -151,7 +156,6 @@ void World::find_intersections() {
             auto *ptr = &contacts.back();
             a->contacts[b] = ptr;
             b->contacts[a] = ptr;
-
         }
     }
     
@@ -207,12 +211,13 @@ void World::create_groups() {
     std::unordered_set<Particle*> unvisited(particles.begin(), particles.end());
 
     while (!unvisited.empty()) {
-        auto p = *unvisited.begin();
-        unvisited.erase(p);
+        auto particle = *unvisited.begin();
+        unvisited.erase(particle);
 
-        auto result = p->get_group_members(unvisited);
-        if (result.stable) {
-
+        auto result = particle->get_group_members(unvisited);
+        groups.emplace_back(result.touching);
+        for (auto &p : result.touching) {
+            p->group = &groups.back();
         }
     }
 }
@@ -232,12 +237,14 @@ void Contact::solve_momentum() {
     // If leaving, do nothing
     if (va_normal > 0) {
         state = CONTACT_STATE_LEAVING;
+        a->group->mark_unstable();
         return;
     }
 
     // If small relative velocity, it's "stable" and do nothing
     if (dot(va, va) < 0.03) {
         state = CONTACT_STATE_STABLE;
+        a->group->mark_unstable();
         return;
     }
 
@@ -278,6 +285,11 @@ Contact::Contact(Particle *a, Particle *b, glm::vec3 normal) : a(a), b(b), norma
 
 }
 
+void Contact::set_state(ContactState state) {
+    this->state = state;
+    stable_time = state == CONTACT_STATE_STABLE ? stable_time + 1 : 0;
+}
+
 void Body::integrate(float dt) {
     Particle::integrate(dt);
     rotation = rotate(rotation, dt, ang_vel);
@@ -288,10 +300,15 @@ void Body::apply_acc(glm::vec3 r, glm::vec3 da) {
     auto ang_impulse = cross(r, da);
 }
 
-ContactGroup::ContactGroup(int id) : id(id), active(true), grav_force(0, 0, 0) {
-
-}
+ContactGroup::ContactGroup(std::vector<Particle*> particles) : particles(particles.begin(), particles.end()){}
 
 void ContactGroup::calculate_params() {
 
+}
+
+void ContactGroup::mark_unstable() {
+    stable = false;
+    for (auto &c : contacts) {
+        c->set_state(CONTACT_STATE_APPROACHING);
+    }
 }

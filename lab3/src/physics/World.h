@@ -29,10 +29,12 @@ struct Contact {
     // Collision normal oriented from b to a
     glm::vec3 normal;
     unsigned long lifetime = 0;
+    unsigned long stable_time = 0;
     ContactState state = CONTACT_STATE_APPROACHING;
 
     void deintersect() const;
     void solve_momentum();
+    void set_state(ContactState state);
     bool operator==(Contact other) const;
 };
 
@@ -59,7 +61,8 @@ struct GroupSearchData {
     bool stable;
 
     // Particles that are touching.
-    std::vector<Particle *> touching;
+    std::vector<Particle*> touching;
+    std::unordered_set<Contact*> contacts;
 };
 
 struct Particle {
@@ -84,14 +87,12 @@ struct Particle {
 
 // Represents a bunch of particles touching each other.
 struct ContactGroup {
-    int id;
     std::unordered_set<Particle*> particles;
-    glm::vec3 pos;
-    glm::vec3 grav_force;
-    float mass;
-    bool active;
-    explicit ContactGroup(int id);
+    std::unordered_set<Contact*> contacts;
+    bool stable = false;
+    explicit ContactGroup(std::vector<Particle *> vector);
     void calculate_params();
+    void mark_unstable();
 };
 
 struct Body : public Particle {
