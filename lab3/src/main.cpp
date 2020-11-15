@@ -321,8 +321,6 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-		/*
 		for (int i = 0; i < 30; i++) {
             auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
 
@@ -331,20 +329,22 @@ public:
 
             world.particles.push_back(particle);
         }
-		world.deintersect_all();*/
+		world.deintersect_all();
 
-		Particle *p = new Particle(1, 1);
+		/*Particle *p = new Particle(1, 1);
         p->pos = vec3(0, 2,-20);
         p->vel = vec3(0, -0,0);
-		world.particles.push_back(p);
+        p->ang_vel = vec3(0, 0, 10);
+        world.particles.push_back(p);
         p = new Particle(1, 1);
-        p->pos = vec3(0, -2, -20);
+        p->pos = vec3(0, -3, -20);
         p->vel = vec3(0, 0,0);
+        p->ang_vel = vec3(0, 0, 10);
         world.particles.push_back(p);
         p = new Particle(1, 1);
         p->pos = vec3(-2, 0, -20);
         p->vel = vec3(0, 0, 0);
-        world.particles.push_back(p);
+        world.particles.push_back(p);*/
     }
 
 	//General OGL initialization - set OGL state here

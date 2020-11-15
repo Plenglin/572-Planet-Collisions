@@ -270,16 +270,21 @@ void Contact::solve_momentum(float dt) {
     auto linear_imp_mag = pa_final - pa;
     auto linear_imp = unit_normal * linear_imp_mag;
 
-    // Tangent velocity and friction
-    auto va_tangent = va - unit_normal * va_normal;
-    auto friction_impulse = normalize(va_tangent) * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt);
-    linear_imp -= friction_impulse;
-
-    // Angular impulse
+    // Distance from collision to center
     auto ra = pos - a->pos;
     auto rb = pos - b->pos;
-    a->ang_impulse += cross(ra, friction_impulse);
-    b->ang_impulse -= cross(rb, friction_impulse);
+    // Linear-only velocity difference
+    auto va_tangent_linear = va - unit_normal * va_normal;
+    // Surface velocity difference
+    auto surface_va = cross(b->ang_vel, rb) - cross(a->ang_vel, ra);
+    // Real surface velocity difference
+    auto va_tangent = va_tangent_linear + surface_va;
+    auto friction_impulse = normalize(va_tangent) * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt);
+    linear_imp += friction_impulse;
+
+    // Angular impulse
+    a->ang_vel += cross(friction_impulse, ra) / a->moi;
+    b->ang_vel += cross(friction_impulse, rb) / b->moi;
 
     // Perform impulse calculation
     a->vel += linear_imp / a->mass;

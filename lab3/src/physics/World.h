@@ -27,7 +27,9 @@ struct Contact {
 
     Particle *a, *b;
     // Collision normal oriented from b to a
-    glm::vec3 normal, pos;
+    glm::vec3 normal;
+    // Collision position
+    glm::vec3 pos;
     unsigned long lifetime = 0;
     ContactState state = CONTACT_STATE_APPROACHING;
 
