@@ -66,12 +66,13 @@ struct GroupSearchData {
 
 struct Particle {
     // State
-    glm::vec3 pos, vel, ang_vel;
+    glm::vec3 pos, vel = glm::vec3(0, 0, 0), ang_vel;
     glm::mat4 rot = glm::mat4(1.0f);
     // Accumulator
     glm::vec3 impulse, ang_impulse;
     std::unordered_map<Particle*, Contact*> contacts;
     ContactGroup *group;
+    void *userdata;
 
     float mass, radius, moi;
     Particle(float mass, float radius);

@@ -6,6 +6,8 @@
 
 #include <utility>
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 using namespace glm;
 
@@ -33,6 +35,7 @@ MeshPart::MeshPart(std::shared_ptr<Shape> shape, std::shared_ptr<Program> prog, 
         surface_area += area;
     }
     centroid_offset /= surface_area * 3.0f;
+    std::cout << centroid_offset.x << "," << centroid_offset.y << "," << centroid_offset.z << "\t\t";
 
     // Assuming it's convex, volume is the sum of tetrahedrons
     for (auto it = eleBuf.begin(); it != eleBuf.end();) {
@@ -49,16 +52,20 @@ MeshPart::MeshPart(std::shared_ptr<Shape> shape, std::shared_ptr<Program> prog, 
     volume /= 2;
 
     for (auto it = posBuf.begin(); it != posBuf.end();) {
-        vec3 v = vec3(*(it++), *(it++), *(it++));
+        vec3 v = vec3(*(it++), *(it++), *(it++)) - centroid_offset;
         float radius = length(v);
-        inner_radius = min(inner_radius, radius);
+        avg_radius += radius;
+        inner_radius = min(radius, inner_radius);
     }
+    avg_radius /= posBuf.size();
+    std::cout << inner_radius << "," << avg_radius << std::endl;
 }
 
 void MeshPart::draw(glm::mat4 &P, glm::mat4 &V, glm::mat4 &M, vec3 &pos) {
+    mat4 mat = M * translate(mat4(1.0f), -centroid_offset);
     glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
     glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &mat[0][0]);
     glUniform3fv(prog->getUniform("campos"), 1, &pos[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);

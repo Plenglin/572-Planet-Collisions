@@ -323,13 +323,36 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+
+
         for (int i = 0; i < sphere->obj_count; i++) {
             parts.emplace_back(sphere, prog, i, HeightTex);
-            auto &part = parts.back();
-            auto *particle = new Particle(part.volume, part.inner_radius);
-            particle->pos = part.centroid_offset;
+        }
+
+        for (auto &part : parts) {
+            auto *particle = new Particle(part.volume, part.inner_radius * 0.7f);
+            particle->userdata = &part;
+            particle->pos = part.centroid_offset * 2.0f;
             world.particles.push_back(particle);
         }
+
+        for (auto &part : parts) {
+            auto *particle = new Particle(part.volume, part.inner_radius * 0.7f);
+            particle->userdata = &part;
+            particle->pos = part.centroid_offset * 2.0f + vec3(10, 0, 0);
+            world.particles.push_back(particle);
+        }
+
+        /*
+        for (int i = 0; i < sphere->obj_count; i++) {
+            auto &part = parts[i];
+            auto *particle = new Particle(part.volume * 0.3f, part.avg_radius * 0.8f);
+            particle->userdata = &part;
+            particle->pos = part.centroid_offset * 1.8f + vec3(20, 0, 0);
+            world.particles.push_back(particle);
+        }*/
+
+        mycam.pos = vec3(0, 0, -20);
 
 		/*do {
 		    world.particles.clear();
@@ -430,7 +453,8 @@ public:
 	}
 	
 	void compute(double frametime) {
-        //world.step(0.01);
+        world.step(0.01);
+        std::cout << world.particles[0]->pos.x << std::endl;
     }
 
 	/****DRAW
@@ -442,10 +466,7 @@ public:
 	{
 		double frametime = get_last_elapsed_time();
 
-		//update(frametime);
 		compute(frametime);
-		
-		cout << endl << endl << "BUFFER AFTER COMPUTE SHADER" << endl << endl;
 
 		// Get current frame buffer size.
 		int width, height;
@@ -478,15 +499,14 @@ public:
 		V = mycam.process(frametime);
 		//send the matrices to the shaders
 
-		for (int i = 0; i < world.particles.size(); i++) {
-            MeshPart &part = parts[i];
-            Particle *particle = world.particles[i];
+		for (auto particle : world.particles) {
+            auto *part = (MeshPart*)particle->userdata;
 			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), particle->pos);
 
 			glm::mat4 rot = particle->rot;
 
 			M = TransZ * rot;
-			part.draw(P, V, M, mycam.pos);
+			part->draw(P, V, M, mycam.pos);
 		}
 
 		prog->unbind();
