@@ -25,7 +25,7 @@ public:
 	void loadMesh(const std::string &meshName, std::string *mtlName = NULL, unsigned char *(loadimage)(char const *, int *, int *, int *, int) = NULL);
 	void init();
 	void resize();
-	void draw(const std::shared_ptr<Program> prog, bool use_extern_texures) const;
+	void draw(const std::shared_ptr<Program> prog, bool use_extern_texures, int mesh_index) const;
 	unsigned int *textureIDs = NULL;
 
 

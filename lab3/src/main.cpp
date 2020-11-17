@@ -285,7 +285,7 @@ public:
 
         sphere = make_shared<Shape>();
         //shape->loadMesh(resourceDirectory + "/t800.obj");
-        sphere->loadMesh(resourceDirectory + "/sphere.obj");
+        sphere->loadMesh(resourceDirectory + "/sphere0.obj");
         sphere->resize();
         sphere->init();
         str = resourceDirectory + "/pluto.jpg";
@@ -481,7 +481,7 @@ public:
 			glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, HeightTex);
-			sphere->draw(prog, false);
+			sphere->draw(prog, false, 5);
 		}
 
 		prog->unbind();
