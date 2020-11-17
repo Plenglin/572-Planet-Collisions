@@ -14,7 +14,7 @@ file(GLOB_RECURSE GLSL "resources/*.glsl")
 include_directories("ext/glad/include")
 
 # Set the executable.
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL})
+add_executable(${CMAKE_PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL} src/MeshPart.cpp src/MeshPart.h)
 
 
 

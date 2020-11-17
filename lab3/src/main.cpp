@@ -14,6 +14,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include "WindowManager.h"
 #include "Shape.h"
 #include "physics/World.h"
+#include "MeshPart.h"
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -105,6 +106,7 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
+	std::vector<MeshPart> parts;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -321,7 +323,15 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		do {
+        for (int i = 0; i < sphere->obj_count; i++) {
+            parts.emplace_back(sphere, prog, i, HeightTex);
+            auto &part = parts.back();
+            auto *particle = new Particle(part.volume, part.inner_radius);
+            particle->pos = part.centroid_offset;
+            world.particles.push_back(particle);
+        }
+
+		/*do {
 		    world.particles.clear();
             for (int i = 0; i < 100; i++) {
                 auto pos = vec3(randf() * 20 - 5, randf() * 20 - 8, -randf() * 20 - 15);
@@ -331,7 +341,7 @@ public:
 
                 world.particles.push_back(particle);
             }
-		} while (world.deintersect_all(10));
+		} while (world.deintersect_all(10));*/
 
 		/*Particle *p = new Particle(1, 1);
         p->pos = vec3(0, 2,-20);
@@ -420,7 +430,7 @@ public:
 	}
 	
 	void compute(double frametime) {
-        world.step(0.01);
+        //world.step(0.01);
     }
 
 	/****DRAW
@@ -468,20 +478,15 @@ public:
 		V = mycam.process(frametime);
 		//send the matrices to the shaders
 
-		for (auto & particle : world.particles) {
+		for (int i = 0; i < world.particles.size(); i++) {
+            MeshPart &part = parts[i];
+            Particle *particle = world.particles[i];
 			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), particle->pos);
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(particle->radius));
 
 			glm::mat4 rot = particle->rot;
 
-			M = TransZ * rot * S;
-			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-			glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-			glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, HeightTex);
-			sphere->draw(prog, false, 5);
+			M = TransZ * rot;
+			part.draw(P, V, M, mycam.pos);
 		}
 
 		prog->unbind();

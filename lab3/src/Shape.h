@@ -29,12 +29,13 @@ public:
 	unsigned int *textureIDs = NULL;
 
 
-private:
 	int obj_count = 0;
 	std::vector<unsigned int> *eleBuf = NULL;
 	std::vector<float> *posBuf = NULL;
 	std::vector<float> *norBuf = NULL;
 	std::vector<float> *texBuf = NULL;
+private:
+
 	unsigned int *materialIDs = NULL;
 
 
