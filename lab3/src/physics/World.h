@@ -117,7 +117,7 @@ struct World {
     World();
 
     void reset();
-    void deintersect_all();
+    bool deintersect_all(int iterations);
 
     void find_intersections();
     void solve_intersections();

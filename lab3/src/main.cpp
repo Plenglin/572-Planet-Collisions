@@ -321,15 +321,17 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		for (int i = 0; i < 30; i++) {
-            auto pos = vec3(randf() * 20 - 5, randf() * 20 - 4, -randf() * 20 - 15);
+		do {
+		    world.particles.clear();
+            for (int i = 0; i < 100; i++) {
+                auto pos = vec3(randf() * 20 - 5, randf() * 20 - 8, -randf() * 20 - 15);
 
-			auto *particle = new Particle(1, 0.25);
-			particle->pos = pos;
+                auto *particle = new Particle(1, 0.25);
+                particle->pos = pos;
 
-            world.particles.push_back(particle);
-        }
-		world.deintersect_all();
+                world.particles.push_back(particle);
+            }
+		} while (world.deintersect_all(10));
 
 		/*Particle *p = new Particle(1, 1);
         p->pos = vec3(0, 2,-20);

@@ -7,7 +7,7 @@
 #include "World.h"
 
 #define G 10
-#define RESTITUTION 1
+#define RESTITUTION 1.0f
 // Essentially the product of (impulse to average normal force) and (friction coefficient)
 #define COLLISION_IMPULSE_TO_FRICTION 10.0f
 #define STABLE_THRESH 0.9
@@ -212,12 +212,13 @@ void World::solve_contacts(float dt) {
     }
 }
 
-void World::deintersect_all() {
+bool World::deintersect_all(int iterations) {
     do {
         contacts.clear();
         find_intersections();
         solve_intersections();
-    } while (!contacts.empty());
+    } while (!contacts.empty() && --iterations > 0);
+    return !contacts.empty();
 }
 
 void World::create_groups() {
@@ -279,12 +280,15 @@ void Contact::solve_momentum(float dt) {
     auto surface_va = cross(b->ang_vel, rb) - cross(a->ang_vel, ra);
     // Real surface velocity difference
     auto va_tangent = va_tangent_linear + surface_va;
-    auto friction_impulse = normalize(va_tangent) * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt);
-    linear_imp += friction_impulse;
+    auto va_tangent_mag = length(va_tangent);
+    if (va_tangent_mag > STABLE_THRESH) {
+        auto friction_impulse = va_tangent * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt / va_tangent_mag);
+        linear_imp += friction_impulse;
 
-    // Angular impulse
-    a->ang_vel += cross(friction_impulse, ra) / a->moi;
-    b->ang_vel += cross(friction_impulse, rb) / b->moi;
+        // Angular impulse
+        a->ang_vel += cross(friction_impulse, ra) / a->moi;
+        b->ang_vel += cross(friction_impulse, rb) / b->moi;
+    }
 
     // Perform impulse calculation
     a->vel += linear_imp / a->mass;
