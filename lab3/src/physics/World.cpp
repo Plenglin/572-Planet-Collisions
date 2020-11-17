@@ -9,7 +9,7 @@
 #define G 10
 #define RESTITUTION 0.99f
 // Essentially the product of (impulse to average normal force) and (friction coefficient)
-#define COLLISION_IMPULSE_TO_FRICTION 10.0f
+#define COLLISION_IMPULSE_TO_FRICTION 5.0f
 #define STABLE_THRESH 0.9
 
 using namespace glm;

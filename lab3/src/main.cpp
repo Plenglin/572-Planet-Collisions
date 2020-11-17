@@ -330,16 +330,9 @@ public:
         }
 
         for (auto &part : parts) {
-            auto *particle = new Particle(part.volume, part.inner_radius * 0.7f);
+            auto *particle = new Particle(part.volume, part.inner_radius * 0.9f);
             particle->userdata = &part;
-            particle->pos = part.centroid_offset * 2.0f;
-            world.particles.push_back(particle);
-        }
-
-        for (auto &part : parts) {
-            auto *particle = new Particle(part.volume, part.inner_radius * 0.7f);
-            particle->userdata = &part;
-            particle->pos = part.centroid_offset * 2.0f + vec3(10, 0, 0);
+            particle->pos = part.centroid_offset * 1.1f;
             world.particles.push_back(particle);
         }
 
@@ -454,7 +447,6 @@ public:
 	
 	void compute(double frametime) {
         world.step(0.01);
-        std::cout << world.particles[0]->pos.x << std::endl;
     }
 
 	/****DRAW
