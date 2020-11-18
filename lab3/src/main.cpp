@@ -330,9 +330,16 @@ public:
         }
 
         for (auto &part : parts) {
-            auto *particle = new Particle(part.volume, part.inner_radius * 0.9f);
+            auto *particle = new Particle(part.volume, part.inner_radius * 0.8f);
             particle->userdata = &part;
-            particle->pos = part.centroid_offset * 1.1f;
+            particle->pos = part.centroid_offset * 1.1f + vec3(0, -5, 0);
+            world.particles.push_back(particle);
+        }
+
+        for (auto &part : parts) {
+            auto *particle = new Particle(part.volume, part.inner_radius * 0.8f);
+            particle->userdata = &part;
+            particle->pos = part.centroid_offset * 1.1f + vec3(0, 5, 0);
             world.particles.push_back(particle);
         }
 
@@ -446,7 +453,9 @@ public:
 	}
 	
 	void compute(double frametime) {
-        world.step(0.01);
+	    for (int i = 0; i < 4; i++) {
+            world.step((1/60.0f) / 4);
+	    }
     }
 
 	/****DRAW

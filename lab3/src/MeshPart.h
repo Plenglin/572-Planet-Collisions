@@ -19,6 +19,7 @@ class MeshPart {
 
 public:
     glm::vec3 centroid_offset = glm::vec3(0, 0, 0);
+
     float avg_radius = 0;
     float inner_radius = INFINITY;
     float surface_area = 0;

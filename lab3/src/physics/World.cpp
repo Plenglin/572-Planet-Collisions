@@ -6,12 +6,6 @@
 #include <algorithm>
 #include "World.h"
 
-#define G 10
-#define RESTITUTION 0.99f
-// Essentially the product of (impulse to average normal force) and (friction coefficient)
-#define COLLISION_IMPULSE_TO_FRICTION 5.0f
-#define STABLE_THRESH 0.9
-
 using namespace glm;
 
 void Particle::integrate(float dt) {
@@ -116,7 +110,7 @@ void World::gravitate(float dt) {
                 continue;
 
             vec3 unit_r = normalize(r);
-            float specific_acc = G / dist2;
+            float specific_acc = constants.G / dist2;
 
             a->vel -= dt * unit_r * specific_acc * b->mass;
             b->vel += dt * unit_r * specific_acc * a->mass;
@@ -189,7 +183,7 @@ void World::solve_contacts(float dt) {
     float mdt = dt / contacts.size();
     for (int i = 0; i < contacts.size(); i++) {
         for (auto c : contacts) {
-            c.solve_momentum(mdt);
+            c.solve_momentum(mdt, constants);
         }
     }
 
@@ -237,7 +231,7 @@ void World::create_groups() {
     }
 }
 
-void Contact::solve_momentum(float dt) {
+void Contact::solve_momentum(float dt, Constants &constants) {
     if (state == CONTACT_STATE_STABLE) {
         return;
     }
@@ -256,7 +250,7 @@ void Contact::solve_momentum(float dt) {
     }
 
     // If small relative velocity, it's "stable" and do nothing
-    if (dot(va, va) < (STABLE_THRESH * STABLE_THRESH)) {
+    if (dot(va, va) < (constants.STABLE_THRESH * constants.STABLE_THRESH)) {
         state = CONTACT_STATE_STABLE;
         return;
     }
@@ -265,7 +259,7 @@ void Contact::solve_momentum(float dt) {
     auto pa = a->mass * va_normal;
 
     // Stolen from https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation with ub = 0
-    auto va_final = (pa - b->mass * RESTITUTION * va_normal) / (a->mass + b->mass);
+    auto va_final = (pa - b->mass * constants.RESTITUTION * va_normal) / (a->mass + b->mass);
     auto pa_final = a->mass * va_final;
 
     auto linear_imp_mag = pa_final - pa;
@@ -281,8 +275,8 @@ void Contact::solve_momentum(float dt) {
     // Real surface velocity difference
     auto va_tangent = va_tangent_linear + surface_va;
     auto va_tangent_mag = length(va_tangent);
-    if (va_tangent_mag > STABLE_THRESH) {
-        auto friction_impulse = va_tangent * (linear_imp_mag * COLLISION_IMPULSE_TO_FRICTION * dt / va_tangent_mag);
+    if (va_tangent_mag > constants.STABLE_THRESH) {
+        auto friction_impulse = va_tangent * (linear_imp_mag * constants.COLLISION_IMPULSE_TO_FRICTION * dt / va_tangent_mag);
         linear_imp += friction_impulse;
 
         // Angular impulse
@@ -309,16 +303,6 @@ void Contact::deintersect() const {
 
 Contact::Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos) : a(a), b(b), normal(normal), pos(pos) {
 
-}
-
-void Body::integrate(float dt) {
-    Particle::integrate(dt);
-    rotation = rotate(rotation, dt, ang_vel);
-}
-
-void Body::apply_acc(glm::vec3 r, glm::vec3 da) {
-    Particle::apply_acc(r, da);
-    auto ang_impulse = cross(r, da);
 }
 
 ContactGroup::ContactGroup(int id) : id(id), active(true), grav_force(0, 0, 0) {

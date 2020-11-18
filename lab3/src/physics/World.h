@@ -14,6 +14,13 @@
 #include <unordered_map>
 
 
+struct Constants {
+    float G = 5.0f;
+    float RESTITUTION = 0.99f;
+    float COLLISION_IMPULSE_TO_FRICTION = 5.0f;
+    float STABLE_THRESH = 0.9f;
+};
+
 struct Particle;
 
 enum ContactState {
@@ -34,7 +41,7 @@ struct Contact {
     ContactState state = CONTACT_STATE_APPROACHING;
 
     void deintersect() const;
-    void solve_momentum(float dt);
+    void solve_momentum(float dt, Constants &constants);
     bool operator==(Contact other) const;
 };
 
@@ -99,21 +106,13 @@ struct ContactGroup {
     void calculate_params();
 };
 
-struct Body : public Particle {
-    glm::vec3 ang_vel;
-
-    // Store rotation in this matrix. Quaternion would technically be better but idk how to ¯\_(ツ)_/¯
-    glm::mat4 rotation;
-    void integrate(float dt) override;
-    void apply_acc(glm::vec3 r, glm::vec3 da) override;
-};
-
 struct World {
     std::vector<Particle*> particles;
     // The set of contacts.
     std::vector<Contact> contacts;
     std::vector<ContactGroup> groups;
     unsigned long steps = 0;
+    Constants constants;
 
     World();
 
