@@ -95,6 +95,15 @@ public:
 	}
 };
 
+void build_fragmented_sphere(std::vector<Particle*> &particles, std::vector<MeshPart> &parts, float radius, vec3 pos, vec3 vel) {
+    for (auto &part : parts) {
+        auto *particle = new Particle(part.volume, part.inner_radius * radius * 0.8f);
+        particle->userdata = &part;
+        particle->pos = part.centroid_offset * 1.1f * radius + pos;
+        particle->vel = vel;
+        particles.push_back(particle);
+    }
+}
 
 class Application : public EventCallbacks
 {
@@ -106,7 +115,8 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
-	std::vector<MeshPart> parts;
+	std::vector<MeshPart> fragment_parts;
+	std::unique_ptr<MeshPart> sphere_part;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -119,8 +129,6 @@ public:
 	GLuint Texture2, HeightTex;
 	GLuint ssbo_GPU_id;
 	GLuint computeProgram;
-
-	std::shared_ptr<Shape> sphere;
 
 	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
@@ -285,11 +293,20 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
+        std::shared_ptr<Shape> sphere;
         sphere = make_shared<Shape>();
         //shape->loadMesh(resourceDirectory + "/t800.obj");
-        sphere->loadMesh(resourceDirectory + "/sphere0.obj");
+        sphere->loadMesh(resourceDirectory + "/sphere.obj");
         sphere->resize();
         sphere->init();
+
+        std::shared_ptr<Shape> sphere_frags;
+        sphere_frags = make_shared<Shape>();
+        //shape->loadMesh(resourceDirectory + "/t800.obj");
+        sphere_frags->loadMesh(resourceDirectory + "/sphere0.obj");
+        sphere_frags->resize();
+        sphere_frags->init();
+
         str = resourceDirectory + "/pluto.jpg";
         strcpy(filepath, str.c_str());
         data = stbi_load(filepath, &width, &height, &channels, 4);
@@ -319,67 +336,28 @@ public:
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
 
+        sphere_part = std::unique_ptr<MeshPart>(new MeshPart(sphere, prog, 0, HeightTex));
 
-		glEnable(GL_BLEND);
+        for (int i = 0; i < sphere_frags->obj_count; i++) {
+            fragment_parts.emplace_back(sphere_frags, prog, i, HeightTex);
+        }
+
+        glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-
-
-        for (int i = 0; i < sphere->obj_count; i++) {
-            parts.emplace_back(sphere, prog, i, HeightTex);
-        }
-
-        for (auto &part : parts) {
-            auto *particle = new Particle(part.volume, part.inner_radius * 0.8f);
-            particle->userdata = &part;
-            particle->pos = part.centroid_offset * 1.1f + vec3(0, -5, 0);
-            world.particles.push_back(particle);
-        }
-
-        for (auto &part : parts) {
-            auto *particle = new Particle(part.volume, part.inner_radius * 0.8f);
-            particle->userdata = &part;
-            particle->pos = part.centroid_offset * 1.1f + vec3(0, 5, 0);
-            world.particles.push_back(particle);
-        }
-
-        /*
-        for (int i = 0; i < sphere->obj_count; i++) {
-            auto &part = parts[i];
-            auto *particle = new Particle(part.volume * 0.3f, part.avg_radius * 0.8f);
-            particle->userdata = &part;
-            particle->pos = part.centroid_offset * 1.8f + vec3(20, 0, 0);
-            world.particles.push_back(particle);
-        }*/
 
         mycam.pos = vec3(0, 0, -20);
 
-		/*do {
-		    world.particles.clear();
-            for (int i = 0; i < 100; i++) {
-                auto pos = vec3(randf() * 20 - 5, randf() * 20 - 8, -randf() * 20 - 15);
-
-                auto *particle = new Particle(1, 0.25);
-                particle->pos = pos;
-
-                world.particles.push_back(particle);
-            }
-		} while (world.deintersect_all(10));*/
-
-		/*Particle *p = new Particle(1, 1);
+		Particle *p = new Particle(1, 1);
         p->pos = vec3(0, 2,-20);
         p->vel = vec3(0, -0,0);
-        p->ang_vel = vec3(0, 0, 10);
+        p->userdata = sphere_part.get();
         world.particles.push_back(p);
+
         p = new Particle(1, 1);
         p->pos = vec3(0, -3, -20);
         p->vel = vec3(0, 0,0);
-        p->ang_vel = vec3(0, 0, 10);
+        p->userdata = sphere_part.get();
         world.particles.push_back(p);
-        p = new Particle(1, 1);
-        p->pos = vec3(-2, 0, -20);
-        p->vel = vec3(0, 0, 0);
-        world.particles.push_back(p);*/
     }
 
 	//General OGL initialization - set OGL state here
