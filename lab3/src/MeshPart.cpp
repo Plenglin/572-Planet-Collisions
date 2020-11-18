@@ -12,14 +12,6 @@
 using namespace glm;
 
 
-bool is_inside_triangle(vec3 pv, vec3 edge, vec3 norm) {
-    return dot(cross(pv, edge), norm) >= 0;
-}
-
-float edge_param(vec3 pv, vec3 edge) {
-    return dot(pv, edge) / dot(edge, edge);
-}
-
 vec3 get_closest_point(vec3 p, vec3 a, vec3 b, vec3 c) {
     vec3 ea = b - c;
     vec3 eb = c - a;
@@ -58,6 +50,7 @@ vec3 get_closest_point(vec3 p, vec3 a, vec3 b, vec3 c) {
         return p_end;
     }
     if (dot(cross(vp, edge), normal) < 0) {
+        // Outside
         return v * parameter + p_start;
     }
     return p_proj;

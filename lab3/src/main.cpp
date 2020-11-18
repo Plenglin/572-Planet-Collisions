@@ -97,10 +97,11 @@ public:
 
 void build_fragmented_sphere(std::vector<Particle*> &particles, std::vector<MeshPart> &parts, float radius, vec3 pos, vec3 vel) {
     for (auto &part : parts) {
-        auto *particle = new Particle(part.volume, part.inner_radius * radius * 0.8f);
+        auto *particle = new Particle(part.volume, part.inner_radius * radius * 0.9f);
         particle->userdata = &part;
-        particle->pos = part.centroid_offset * 1.1f * radius + pos;
+        particle->pos = part.centroid_offset * radius + pos;
         particle->vel = vel;
+        particle->draw_scale = radius;
         particles.push_back(particle);
     }
 }
@@ -117,6 +118,7 @@ public:
 	std::shared_ptr<Program> prog, heightshader;
 	std::vector<MeshPart> fragment_parts;
 	std::unique_ptr<MeshPart> sphere_part;
+	bool has_collided = false;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -346,16 +348,18 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         mycam.pos = vec3(0, 0, -20);
+        world.constants.RESTITUTION = -0.2f;
 
-		Particle *p = new Particle(1, 1);
-        p->pos = vec3(0, 2,-20);
+		Particle *p = new Particle(8, 2);
+        p->pos = vec3(0, 0, 0);
         p->vel = vec3(0, -0,0);
         p->userdata = sphere_part.get();
+        p->draw_scale = 2;
         world.particles.push_back(p);
 
         p = new Particle(1, 1);
-        p->pos = vec3(0, -3, -20);
-        p->vel = vec3(0, 0,0);
+        p->pos = vec3(-10, 0, 0);
+        p->vel = vec3(10, 0,0);
         p->userdata = sphere_part.get();
         world.particles.push_back(p);
     }
@@ -402,8 +406,6 @@ public:
 		heightshader->addAttribute("vertPos");
 		heightshader->addAttribute("vertTex");
 
-
-
 		std::string ShaderString = readFileAsString("../resources/compute.glsl");
 		const char* shader = ShaderString.c_str();
 		GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
@@ -433,6 +435,19 @@ public:
 	void compute(double frametime) {
 	    for (int i = 0; i < 4; i++) {
             world.step((1/60.0f) / 4);
+            if (!has_collided && !world.contacts.empty()) {
+                has_collided = true;
+                world.deintersect_all(2);
+                vector<Particle*> particles;
+                for (auto &p : world.particles) {
+                    build_fragmented_sphere(particles, fragment_parts, p->radius * 0.98f, p->pos, p->vel);
+                }
+                world.constants.G = 0.01;
+                world.constants.RESTITUTION = 0.99;
+                world.particles = particles;
+                world.deintersect_all(10);
+                break;
+            }
 	    }
     }
 
@@ -481,10 +496,10 @@ public:
 		for (auto particle : world.particles) {
             auto *part = (MeshPart*)particle->userdata;
 			glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), particle->pos);
-
 			glm::mat4 rot = particle->rot;
+			glm::mat4 scl = scale(mat4(1.0f), vec3(particle->draw_scale, particle->draw_scale, particle->draw_scale));
 
-			M = TransZ * rot;
+			M = TransZ * rot * scl;
 			part->draw(P, V, M, mycam.pos);
 		}
 

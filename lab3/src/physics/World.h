@@ -92,6 +92,8 @@ struct Particle {
 
     // DFS for particles in this group
     GroupSearchData get_group_members(std::unordered_set<Particle *> unvisited);
+
+    float draw_scale = 1.0f;
 };
 
 // Represents a bunch of particles touching each other.
