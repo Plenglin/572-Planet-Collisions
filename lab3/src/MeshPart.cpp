@@ -41,7 +41,7 @@ vec3 get_closest_point(vec3 p, vec3 a, vec3 b, vec3 c) {
     }
 
     vec3 v = p_end - p_start;
-    float parameter = dot(normalize(edge), normalize(v));
+    float parameter = dot(v, normalize(edge)) / length(edge);
 
     if (parameter < 0) {
         return p_start;

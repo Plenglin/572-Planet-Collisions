@@ -20,9 +20,9 @@
   </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="lab3" targetName="lab3" />
       <config projectName="lab3" targetName="uninstall" />
       <config projectName="lab3" targetName="glfw" />
+      <config projectName="lab3" targetName="lab3" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -31,11 +31,13 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cbe711d8-7127-4c78-9431-c64bd11d5f97" name="Default Changelist" comment="Remove walls&#10;&#10;Something something something &quot;muh immigrants&quot;">
+    <list default="true" id="cbe711d8-7127-4c78-9431-c64bd11d5f97" name="Default Changelist" comment="Sphere fragmentation on contact">
+      <change afterPath="$PROJECT_DIR$/resources/muchospisces.mtl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/muchospisces.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MeshPart.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/MeshPart.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/physics/World.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/physics/World.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/physics/World.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/physics/World.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +51,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$/.." value="astrid" />
+        <entry key="$PROJECT_DIR$/.." value="7a36dfd9f924f9b168e7f675e2c80b4e7a909d2c" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -68,6 +70,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/resources" />
+    <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -84,11 +87,6 @@
         <aux-dir>$USER_HOME$</aux-dir>
       </texify-bibtex>
       <method v="2" />
-    </configuration>
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
     </configuration>
     <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
@@ -108,6 +106,11 @@
     <configuration name="uninstall" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="lab3" TARGET_NAME="uninstall" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration default="true" type="LATEX_RUN_CONFIGURATION" factoryName="LaTeX configuration factory">
@@ -158,6 +161,10 @@
       <workItem from="1604537463041" duration="1214000" />
       <workItem from="1604631083957" duration="4378000" />
       <workItem from="1604791009326" duration="2126000" />
+      <workItem from="1605470211348" duration="8761000" />
+      <workItem from="1605578661446" duration="6121000" />
+      <workItem from="1605644194498" duration="20305000" />
+      <workItem from="1605733252629" duration="4405000" />
     </task>
     <task id="LOCAL-00001" summary="Linux/CLion compatibility">
       <created>1604440954096</created>
@@ -208,7 +215,133 @@
       <option name="project" value="LOCAL" />
       <updated>1605391242395</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Contacts that survive for multiple iterations">
+      <created>1605394955586</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1605394955586</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Fix 3-way, somewhat">
+      <created>1605399688729</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1605399688729</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fix wrongfully deleted contacts">
+      <created>1605401081879</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1605401081879</updated>
+    </task>
+    <task id="LOCAL-00011" summary="this makes me sad">
+      <created>1605471724960</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1605471724960</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Begin adding friction + rotation">
+      <created>1605474013928</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1605474013928</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Render loop cleanup">
+      <created>1605474163938</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1605474163938</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Rotation integration">
+      <created>1605475273156</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1605475273156</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Fix NaNing angular velocities">
+      <created>1605475544017</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1605475544017</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Ball go spinny">
+      <created>1605477900060</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1605477900060</updated>
+    </task>
+    <task id="LOCAL-00017" summary="More deintersection/nan fixes">
+      <created>1605580923976</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1605580923976</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Add in Joe's meshes">
+      <created>1605644461595</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1605644461595</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Add in Joe's meshes">
+      <created>1605644480885</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1605644480885</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Mesh parts">
+      <created>1605648464241</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1605648464241</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Physics on the parts">
+      <created>1605651619530</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1605651619530</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Better closest point algorithm">
+      <created>1605656811100</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1605656811100</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Move constants into its own struct">
+      <created>1605665480427</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1605665480427</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Back to 2 spheres">
+      <created>1605672175981</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1605672175981</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Sphere fragmentation on contact">
+      <created>1605674696337</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1605674696337</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -234,63 +367,103 @@
     <MESSAGE value="Speed up loading time" />
     <MESSAGE value="Remove walls" />
     <MESSAGE value="Remove walls&#10;&#10;Something something something &quot;muh immigrants&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove walls&#10;&#10;Something something something &quot;muh immigrants&quot;" />
+    <MESSAGE value="Contacts that survive for multiple iterations" />
+    <MESSAGE value="Fix 3-way, somewhat" />
+    <MESSAGE value="Fix wrongfully deleted contacts" />
+    <MESSAGE value="this makes me sad" />
+    <MESSAGE value="Begin adding friction + rotation" />
+    <MESSAGE value="Render loop cleanup" />
+    <MESSAGE value="Rotation integration" />
+    <MESSAGE value="Fix NaNing angular velocities" />
+    <MESSAGE value="Ball go spinny" />
+    <MESSAGE value="More deintersection/nan fixes" />
+    <MESSAGE value="Add in Joe's meshes" />
+    <MESSAGE value="Mesh parts" />
+    <MESSAGE value="Physics on the parts" />
+    <MESSAGE value="Better closest point algorithm" />
+    <MESSAGE value="Move constants into its own struct" />
+    <MESSAGE value="Back to 2 spheres" />
+    <MESSAGE value="Sphere fragmentation on contact" />
+    <option name="LAST_COMMIT_MESSAGE" value="Sphere fragmentation on contact" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="2289" y="486" width="528" height="384" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1604456775970">
-      <screen x="1920" y="0" width="2560" height="1440" />
+    <state x="3567" y="470" width="572" height="384" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1605761374607">
+      <screen x="3200" y="0" width="2560" height="1440" />
     </state>
     <state x="2289" y="486" width="528" height="384" key="#com.intellij.fileTypes.FileTypeChooser/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1604456775970" />
+    <state x="3567" y="470" width="572" height="384" key="#com.intellij.fileTypes.FileTypeChooser/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761374607" />
+    <state x="2466" y="442" width="185" height="516" key="#xdebugger.XInspectDialog" timestamp="1605475360494">
+      <screen x="1920" y="0" width="2560" height="1440" />
+    </state>
+    <state x="2466" y="442" width="185" height="516" key="#xdebugger.XInspectDialog/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605475360494" />
+    <state x="1934" y="34" width="2532" height="1392" key="DiffContextDialog" timestamp="1605581098023">
+      <screen x="1920" y="0" width="2560" height="1440" />
+    </state>
+    <state x="1934" y="34" width="2532" height="1392" key="DiffContextDialog/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605581098023" />
     <state x="2981" y="464" width="428" height="472" key="FileChooserDialogImpl" timestamp="1604456729950">
       <screen x="1920" y="0" width="2560" height="1440" />
     </state>
     <state x="2981" y="464" width="428" height="472" key="FileChooserDialogImpl/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1604456729950" />
-    <state width="2482" height="494" key="GridCell.Tab.0.bottom" timestamp="1605394894674">
+    <state width="2482" height="505" key="GridCell.Tab.0.bottom" timestamp="1605761945487">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="407" key="GridCell.Tab.0.bottom/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172680" />
+    <state width="2482" height="505" key="GridCell.Tab.0.bottom/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945487" />
+    <state width="2482" height="505" key="GridCell.Tab.0.center" timestamp="1605761945487">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="407" key="GridCell.Tab.0.center/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172679" />
+    <state width="2482" height="505" key="GridCell.Tab.0.center/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945487" />
+    <state width="2482" height="505" key="GridCell.Tab.0.left" timestamp="1605761945487">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="407" key="GridCell.Tab.0.left/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172679" />
+    <state width="2482" height="505" key="GridCell.Tab.0.left/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945487" />
+    <state width="2482" height="505" key="GridCell.Tab.0.right" timestamp="1605761945487">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="407" key="GridCell.Tab.0.right/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172679" />
+    <state width="2482" height="505" key="GridCell.Tab.0.right/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945487" />
+    <state width="2482" height="505" key="GridCell.Tab.1.bottom" timestamp="1605761945434">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="500" key="GridCell.Tab.1.bottom/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172270" />
+    <state width="1210" height="500" key="GridCell.Tab.1.bottom/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@1280.360.1920.1080" timestamp="1605657325495" />
+    <state width="2482" height="505" key="GridCell.Tab.1.bottom/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945434" />
+    <state width="2482" height="505" key="GridCell.Tab.1.center" timestamp="1605761945434">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="500" key="GridCell.Tab.1.center/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172270" />
+    <state width="1210" height="500" key="GridCell.Tab.1.center/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@1280.360.1920.1080" timestamp="1605657325495" />
+    <state width="2482" height="505" key="GridCell.Tab.1.center/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945434" />
+    <state width="2482" height="505" key="GridCell.Tab.1.left" timestamp="1605761945434">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="500" key="GridCell.Tab.1.left/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172270" />
+    <state width="1210" height="500" key="GridCell.Tab.1.left/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@1280.360.1920.1080" timestamp="1605657325495" />
+    <state width="2482" height="505" key="GridCell.Tab.1.left/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945434" />
+    <state width="2482" height="505" key="GridCell.Tab.1.right" timestamp="1605761945434">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state width="2482" height="500" key="GridCell.Tab.1.right/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605586172270" />
+    <state width="1210" height="500" key="GridCell.Tab.1.right/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@1280.360.1920.1080" timestamp="1605657325495" />
+    <state width="2482" height="505" key="GridCell.Tab.1.right/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605761945434" />
+    <state x="3655" y="138" width="804" height="516" key="Vcs.Push.Dialog.v2" timestamp="1605677195019">
+      <screen x="3200" y="0" width="2560" height="1440" />
+    </state>
+    <state x="2389" y="250" width="804" height="516" key="Vcs.Push.Dialog.v2/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605580925317" />
+    <state x="3655" y="138" width="804" height="516" key="Vcs.Push.Dialog.v2/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605677195019" />
+    <state x="2904" y="461" width="592" height="522" key="find.popup" timestamp="1605418104579">
       <screen x="1920" y="0" width="2560" height="1440" />
     </state>
-    <state width="2482" height="494" key="GridCell.Tab.0.bottom/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394894674" />
-    <state width="2482" height="494" key="GridCell.Tab.0.center" timestamp="1605394894674">
-      <screen x="1920" y="0" width="2560" height="1440" />
+    <state x="2904" y="461" width="592" height="522" key="find.popup/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605418104579" />
+    <state x="2764" y="491" width="436" height="417" key="refactoring.ChangeSignatureDialog" timestamp="1605665299632">
+      <screen x="1280" y="360" width="1920" height="1080" />
     </state>
-    <state width="2482" height="494" key="GridCell.Tab.0.center/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394894674" />
-    <state width="2482" height="494" key="GridCell.Tab.0.left" timestamp="1605394894674">
-      <screen x="1920" y="0" width="2560" height="1440" />
+    <state x="2764" y="491" width="436" height="417" key="refactoring.ChangeSignatureDialog/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605665299632" />
+    <state x="2862" y="341" key="run.anything.popup" timestamp="1605656985065">
+      <screen x="1280" y="360" width="1920" height="1080" />
     </state>
-    <state width="2482" height="494" key="GridCell.Tab.0.left/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394894674" />
-    <state width="2482" height="494" key="GridCell.Tab.0.right" timestamp="1605394894674">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state width="2482" height="494" key="GridCell.Tab.0.right/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394894674" />
-    <state width="1210" height="494" key="GridCell.Tab.1.bottom" timestamp="1605394897952">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state width="1210" height="494" key="GridCell.Tab.1.bottom/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394897952" />
-    <state width="1210" height="494" key="GridCell.Tab.1.center" timestamp="1605394897952">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state width="1210" height="494" key="GridCell.Tab.1.center/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394897952" />
-    <state width="1210" height="494" key="GridCell.Tab.1.left" timestamp="1605394897952">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state width="1210" height="494" key="GridCell.Tab.1.left/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394897952" />
-    <state width="1210" height="494" key="GridCell.Tab.1.right" timestamp="1605394897952">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state width="1210" height="494" key="GridCell.Tab.1.right/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605394897952" />
-    <state x="2399" y="330" width="804" height="516" key="Vcs.Push.Dialog.v2" timestamp="1605391285914">
-      <screen x="1920" y="0" width="2560" height="1440" />
-    </state>
-    <state x="2399" y="330" width="804" height="516" key="Vcs.Push.Dialog.v2/1920.0.2560.1440/4480.0.1280.1024/0.360.1920.1080@1920.0.2560.1440" timestamp="1605391285914" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/physics/World.cpp</url>
-          <line>211</line>
-          <option name="timeStamp" value="18" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <state x="2862" y="341" key="run.anything.popup/3200.0.2560.1440/0.360.1280.1024/1280.360.1920.1080@3200.0.2560.1440" timestamp="1605656985065" />
   </component>
 </project>

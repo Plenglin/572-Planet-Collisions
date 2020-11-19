@@ -116,7 +116,7 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
-	std::vector<MeshPart> fragment_parts;
+	std::vector<MeshPart> fragment_parts, more_parts;
 	std::unique_ptr<MeshPart> sphere_part;
 	bool has_collided = false;
 
@@ -295,19 +295,23 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-        std::shared_ptr<Shape> sphere;
-        sphere = make_shared<Shape>();
+        std::shared_ptr<Shape> sphere = make_shared<Shape>();
         //shape->loadMesh(resourceDirectory + "/t800.obj");
         sphere->loadMesh(resourceDirectory + "/sphere.obj");
         sphere->resize();
         sphere->init();
 
-        std::shared_ptr<Shape> sphere_frags;
-        sphere_frags = make_shared<Shape>();
+        std::shared_ptr<Shape> sphere_frags = make_shared<Shape>();
         //shape->loadMesh(resourceDirectory + "/t800.obj");
         sphere_frags->loadMesh(resourceDirectory + "/sphere0.obj");
         sphere_frags->resize();
         sphere_frags->init();
+
+        std::shared_ptr<Shape> more_parts_shape = make_shared<Shape>();
+        //shape->loadMesh(resourceDirectory + "/t800.obj");
+        more_parts_shape->loadMesh(resourceDirectory + "/muchospisces.obj");
+        more_parts_shape->resize();
+        more_parts_shape->init();
 
         str = resourceDirectory + "/pluto.jpg";
         strcpy(filepath, str.c_str());
@@ -339,16 +343,18 @@ public:
 		glUniform1i(Tex2Location, 1);
 
         sphere_part = std::unique_ptr<MeshPart>(new MeshPart(sphere, prog, 0, HeightTex));
-
         for (int i = 0; i < sphere_frags->obj_count; i++) {
             fragment_parts.emplace_back(sphere_frags, prog, i, HeightTex);
+        }
+        for (int i = 0; i < more_parts_shape->obj_count; i++) {
+            more_parts.emplace_back(more_parts_shape, prog, i, HeightTex);
         }
 
         glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        mycam.pos = vec3(0, 0, -20);
-        world.constants.RESTITUTION = -0.2f;
+        mycam.pos = vec3(-20, 0, -40);
+        world.constants.RESTITUTION = -0.05f;
 
 		Particle *p = new Particle(8, 2);
         p->pos = vec3(0, 0, 0);
@@ -359,7 +365,7 @@ public:
 
         p = new Particle(1, 1);
         p->pos = vec3(-10, 0, 0);
-        p->vel = vec3(10, 0,0);
+        p->vel = vec3(10, 0.1,0);
         p->userdata = sphere_part.get();
         world.particles.push_back(p);
     }
@@ -433,19 +439,25 @@ public:
 	}
 	
 	void compute(double frametime) {
-	    for (int i = 0; i < 4; i++) {
-            world.step((1/60.0f) / 4);
+	    static float dt = 1 / 60.0f;
+	    static int ratio = 2;
+	    std::cout << 1 / frametime << " fps" << std::endl;
+	    for (int i = 0; i < ratio; i++) {
+            world.step(dt);
             if (!has_collided && !world.contacts.empty()) {
+                std::cout << "Collision happened" << std::endl;
                 has_collided = true;
                 world.deintersect_all(2);
                 vector<Particle*> particles;
-                for (auto &p : world.particles) {
-                    build_fragmented_sphere(particles, fragment_parts, p->radius * 0.98f, p->pos, p->vel);
-                }
-                world.constants.G = 0.01;
+                auto p = world.particles[1];
+                build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel);
+                p = world.particles[0];
+                build_fragmented_sphere(particles, more_parts, p->radius, p->pos, p->vel);
+
                 world.constants.RESTITUTION = 0.99;
+                ratio = 1;
                 world.particles = particles;
-                world.deintersect_all(10);
+                world.deintersect_all(30);
                 break;
             }
 	    }
