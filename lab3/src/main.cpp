@@ -452,10 +452,10 @@ public:
                 auto p = world.particles[1];
                 build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel);
                 p = world.particles[0];
-                build_fragmented_sphere(particles, more_parts, p->radius, p->pos, p->vel);
+                build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel);
 
                 world.constants.RESTITUTION = 0.99;
-                ratio = 1;
+                ratio = 4;
                 world.particles = particles;
                 world.deintersect_all(30);
                 break;
