@@ -121,7 +121,6 @@ void World::gravitate(float dt) {
 void World::step(float dt) {
     reset();
     find_intersections();
-    //solve_intersections();
     gravitate(dt);
 
     solve_contacts(dt);

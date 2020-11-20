@@ -440,7 +440,7 @@ public:
 	
 	void compute(double frametime) {
 	    static float dt = 1 / 60.0f;
-	    static int ratio = 2;
+	    static int ratio = 1;
 	    std::cout << 1 / frametime << " fps" << std::endl;
 	    for (int i = 0; i < ratio; i++) {
             world.step(dt);
@@ -455,7 +455,7 @@ public:
                 build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel);
 
                 world.constants.RESTITUTION = 0.99;
-                ratio = 4;
+                ratio = 1;
                 world.particles = particles;
                 world.deintersect_all(30);
                 break;
