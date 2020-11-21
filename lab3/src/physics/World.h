@@ -15,7 +15,7 @@
 #include <glad/glad.h>
 
 
-#define MAX_CONTACTS_PER_PARTICLE 102
+#define MAX_CONTACTS_PER_PARTICLE 103
 
 struct Constants {
     float G = 5.0f;
@@ -67,18 +67,20 @@ namespace std {
 struct GPUParticle {
     glm::vec3 pos;
     float radius;
+    glm::vec3 gravity_acc;
     float mass;
     uint contact_count;
     uint contacts[MAX_CONTACTS_PER_PARTICLE];
 };
 
 struct GPUInput {
-    uint size;
+    uint particles_count;
+    uint _1, _2, _3;
     GPUParticle particles[];
 
     static uint get_size(uint gpu_particle_count);
     void read_from(std::vector<Particle*> &src);
-    void write_to(std::vector<Particle*> &dst, std::vector<Contact> &contacts);
+    void write_to(float dt, std::vector<Particle *> &dst, std::vector<Contact> &contacts);
 };
 
 struct Particle {
@@ -124,6 +126,7 @@ struct World {
     void step(float dt);
 
     GLuint gpu_particles, atomic_buf;
+    GLuint ssbo_block_index;
 };
 
 

@@ -1,18 +1,27 @@
 #version 450 
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define ACC vec3(0,-9.81,0)
-#define gravity .00007667
+#define G 4
 #define numberOfSpheres 552
-layout(local_size_x = 256, local_size_y = 1) in;	
+#define WORKERS 256
+#define MAX_CONTACTS_PER_PARTICLE 102
+
+struct GPUParticle {
+    vec3 pos;
+    float radius;
+    vec3 gravity_acc;
+    float mass;
+    uint contact_count;
+    uint contacts[MAX_CONTACTS_PER_PARTICLE];
+};
+
+layout(local_size_x = WORKERS, local_size_y = 1) in;
 
 
-layout (std430, binding=0) volatile buffer shader_data
-{ 
-  vec4 pos[numberOfSpheres];
-  vec4 vel[numberOfSpheres];
-  vec4 testbit;
- 
+layout (std430, binding=0) volatile buffer shader_data {
+    uint particles_count;
+    uint _1, _2, _3;
+    GPUParticle particles[];
 };
 
 vec4 minus( vec4 v1, vec4 v2){
@@ -58,33 +67,24 @@ vec4 kaboom(vec4 vel1,vec4 vel2, vec4 pos1, vec4 pos2){
 
 
 
-void main() 
-	{
-	uint index = uint(256) * gl_WorkGroupID.x + gl_LocalInvocationID.x;
-	if(index >= numberOfSpheres) return;
+void main() {
+	uint index = gl_GlobalInvocationID.x;
 
-		vec3 velocity = vec3(vel[index].xyz);
-		vec3 position = vec3(pos[index].xyz);
-		int mass = int(pos[index].w);
-		vec3 force = vec3(0,0,0);
-		barrier();
-		for(int i = 0; i < numberOfSpheres; i++){
-			if( index != i){
-				vec3 forces = (pos[i].xyz - position);
-				if( length(forces) > 1e-5){
-					//current working strategy
-					vec3 acting = (pos[i].w/2.0) * (1.0/pow(length(forces),2)) *normalize(forces);
-					force += acting;
-				}
-			}
-		}
-		barrier();
-		
-		force += velocity;
+	uint start = index * particles_count / WORKERS;
+	uint end = (index + 1) * particles_count / WORKERS;
 
-		
-		force = force * vel[index].w * gravity;
-		vel[index]= vec4(force,vel[index].w);
+	for (uint i = start; i < end; i++) {
+	    particles[i].gravity_acc = vec3(0, 0, 0);
+	    for (uint j = 0; j < particles_count; j++) {
+            vec3 r = particles[j].pos - particles[i].pos;
+            float dist2 = dot(r, r);
+            if (dist2 < 1e-5)
+                continue;
 
+            vec3 unit_r = normalize(r);
+            float specific_acc = G / dist2;
 
+            particles[i].gravity_acc += unit_r * (specific_acc * particles[j].mass);
+	    }
+	}
 }

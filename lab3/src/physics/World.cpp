@@ -71,11 +71,10 @@ void World::gravitate(float dt) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
-    glShaderStorageBlockBinding(computeProgram, 0, 0);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+    glShaderStorageBlockBinding(computeProgram, ssbo_block_index, 0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gpu_particles);
 
     glUseProgram(computeProgram);
-    //activate atomic counter
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
 
@@ -89,7 +88,7 @@ void World::gravitate(float dt) {
         auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        ssbo->write_to(particles, contacts);
+        ssbo->write_to(dt, particles, contacts);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -215,6 +214,9 @@ void World::load_compute() {
     glLinkProgram(computeProgram);
     glUseProgram(computeProgram);
 
+    ssbo_block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
+    glShaderStorageBlockBinding(computeProgram, ssbo_block_index, 2);
+
     GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
     glShaderStorageBlockBinding(computeProgram, block_index, 2);
 
@@ -308,7 +310,7 @@ uint GPUInput::get_size(uint gpu_particle_count) {
 }
 
 void GPUInput::read_from(vector<Particle*> &src) {
-    size = src.size();
+    particles_count = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
         particles[i].pos = p->pos;
@@ -318,11 +320,12 @@ void GPUInput::read_from(vector<Particle*> &src) {
     }
 }
 
-void GPUInput::write_to(vector<Particle*> &dst, vector<Contact> &contacts) {
+void GPUInput::write_to(float dt, vector<Particle *> &dst, vector<Contact> &contacts) {
     for (int i = 0; i < dst.size(); i++) {
         auto &p = dst[i];
         p->pos = particles[i].pos;
         p->radius = particles[i].radius;
         p->mass = particles[i].mass;
+        p->vel += dt * particles[i].gravity_acc;
     }
 }
