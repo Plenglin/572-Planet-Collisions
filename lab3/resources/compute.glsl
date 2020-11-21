@@ -2,14 +2,15 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 #define ACC vec3(0,-9.81,0)
-
+#define gravity .00007667
+#define numberOfSpheres 552
 layout(local_size_x = 256, local_size_y = 1) in;	
 
 
 layout (std430, binding=0) volatile buffer shader_data
 { 
-  vec4 pos[100];
-  vec4 vel[100];
+  vec4 pos[numberOfSpheres];
+  vec4 vel[numberOfSpheres];
   vec4 testbit;
  
 };
@@ -56,56 +57,34 @@ vec4 kaboom(vec4 vel1,vec4 vel2, vec4 pos1, vec4 pos2){
 }
 
 
+
 void main() 
 	{
 	uint index = uint(256) * gl_WorkGroupID.x + gl_LocalInvocationID.x;
-	vec3 velocity = vec3(vel[index].x,vel[index].y,vel[index].z);
-	vec3 position = vec3(pos[index].x,pos[index].y,pos[index].z);
-	velocity = velocity + vec3(0,-9.81,0) * 0.001f;
-	position = position + velocity * vel[index].w;
-	//setting the updated velocity, odd change
-	vel[index] = vec4(velocity, vel[index].w);
-	pos[index] = vec4(position,pos[index].w);
-	barrier();
-	//original method to keep track of changes
-	vec4 newVelocity = vec4(velocity, vel[index].w);
-	if(index < 100){
+	if(index >= numberOfSpheres) return;
 
-
-
-
-		for(int i = 0; i < 100; i++){
-			if(index != i){
-				if(doTheyCollide(pos[index],pos[i])){
-					newVelocity = kaboom(vec4(velocity,vel[index].w), vel[i], pos[index], pos[i]);
+		vec3 velocity = vec3(vel[index].xyz);
+		vec3 position = vec3(pos[index].xyz);
+		int mass = int(pos[index].w);
+		vec3 force = vec3(0,0,0);
+		barrier();
+		for(int i = 0; i < numberOfSpheres; i++){
+			if( index != i){
+				vec3 forces = (pos[i].xyz - position);
+				if( length(forces) > 1e-5){
+					//current working strategy
+					vec3 acting = (pos[i].w/2.0) * (1.0/pow(length(forces),2)) *normalize(forces);
+					force += acting;
 				}
 			}
 		}
 		barrier();
-		//set the new velocity
-		vel[index] = newVelocity;
-
-		if((pos[index].y - pos[index].w) < -5){
-			vel[index].y = abs(vel[index].y);
-		}
-		if((pos[index].y + pos[index].w) > 6){
-			vel[index].y = -abs(vel[index].y);
-		}
-
-		if((pos[index].x - pos[index].w) < -5){
-			vel[index].x = abs(vel[index].x);
-		}
-
-		if((pos[index].x + pos[index].w) > 5){
-			vel[index].x = -abs(vel[index].x);
-		}
-
-		if((pos[index].z - pos[index].w) < -25){
-			vel[index].z = abs(vel[index].z);
-		}
 		
-		if((pos[index].z - pos[index].w) > -15){
-			vel[index].z = -abs(vel[index].z);
-		}
-	}
+		force += velocity;
+
+		
+		force = force * vel[index].w * gravity;
+		vel[index]= vec4(force,vel[index].w);
+
+
 }
