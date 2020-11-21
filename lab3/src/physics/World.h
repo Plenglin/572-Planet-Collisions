@@ -14,6 +14,8 @@
 #include <unordered_map>
 
 
+#define MAX_CONTACTS_PER_PARTICLE 102
+
 struct Constants {
     float G = 5.0f;
     float RESTITUTION = 0.99f;
@@ -61,6 +63,23 @@ namespace std {
     };
 }
 
+struct GPUParticle {
+    glm::vec3 pos;
+    float radius;
+    float mass;
+    uint contact_count;
+    uint contacts[MAX_CONTACTS_PER_PARTICLE];
+};
+
+struct GPUInput {
+    uint size;
+    GPUParticle particles[];
+
+    static uint get_size(uint gpu_particle_count);
+    void read(std::vector<Particle> &src);
+    void write(std::vector<Particle> &dst, std::vector<Contact> &contacts);
+};
+
 struct Particle {
     // State
     glm::vec3 pos, vel = glm::vec3(0, 0, 0), ang_vel;
@@ -80,6 +99,10 @@ struct Particle {
     float draw_scale = 1.0f;
 };
 
+uint gpu_input_size(uint gpu_particle_count) {
+    return gpu_particle_count * sizeof(GPUParticle);
+}
+
 struct World {
     std::vector<Particle*> particles;
     // The set of contacts.
@@ -88,7 +111,6 @@ struct World {
     Constants constants;
 
     World();
-
     void reset();
     bool deintersect_all(int iterations);
 

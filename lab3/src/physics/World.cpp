@@ -56,31 +56,7 @@ void World::integrate(float dt) {
 
 //position, mass 552 particles
 void World::gravitate(float dt) {
-    int numberOfParticles = 0;
-    for (auto ita = particles.begin(); ita != particles.end(); ita++) {
-        auto *a = *ita;
-        numberOfParticles++;
-        for (auto itb = particles.begin(); itb != ita; itb++) {
-            auto *b = *itb;
-            vec3 r = a->pos - b->pos;
-            float dist2 = dot(r, r);
-            if (dist2 < 1e-5)
-                continue;
 
-            /*
-            auto contact = a->contacts.find(b);
-            if (contact != a->contacts.end() && contact->second->state == CONTACT_STATE_APPROACHING)
-                continue;
-                */
-
-            vec3 unit_r = normalize(r);
-            float specific_acc = constants.G / dist2;
-
-            a->vel -= dt * unit_r * specific_acc * b->mass;
-            b->vel += dt * unit_r * specific_acc * a->mass;
-        }
-    }
-    cout << numberOfParticles<< endl;
 }
 
 void World::step(float dt) {
@@ -252,4 +228,28 @@ void Contact::deintersect() const {
 
 Contact::Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos) : a(a), b(b), normal(normal), pos(pos) {
 
+}
+
+uint GPUInput::get_size(uint gpu_particle_count) {
+    return 16 + gpu_particle_count * sizeof(GPUParticle);
+}
+
+void GPUInput::read(vector<Particle> &src) {
+    for (int i = 0; i < src.size(); i++) {
+        auto &p = src[i];
+        particles[i].pos = p.pos;
+        particles[i].radius = p.radius;
+        particles[i].mass = p.mass;
+        particles[i].contact_count = 0;
+    }
+}
+
+void GPUInput::write(vector<Particle> &dst, vector<Contact> &contacts) {
+    for (int i = 0; i < dst.size(); i++) {
+        auto &p = dst[i];
+         p.pos = particles[i].pos;
+         p.radius = particles[i].radius;
+         p.mass = particles[i].mass;
+
+    }
 }
