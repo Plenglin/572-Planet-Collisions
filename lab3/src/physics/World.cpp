@@ -5,8 +5,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include "World.h"
+#include<iostream>
 
 using namespace glm;
+using namespace std;
 
 void Particle::integrate(float dt) {
     vel += impulse / mass;
@@ -95,9 +97,12 @@ void World::integrate(float dt) {
     }
 }
 
+//position, mass 552 particles
 void World::gravitate(float dt) {
+    int numberOfParticles = 0;
     for (auto ita = particles.begin(); ita != particles.end(); ita++) {
         auto *a = *ita;
+        numberOfParticles++;
         for (auto itb = particles.begin(); itb != ita; itb++) {
             auto *b = *itb;
             vec3 r = a->pos - b->pos;
@@ -105,9 +110,11 @@ void World::gravitate(float dt) {
             if (dist2 < 1e-5)
                 continue;
 
+            /*
             auto contact = a->contacts.find(b);
             if (contact != a->contacts.end() && contact->second->state == CONTACT_STATE_APPROACHING)
                 continue;
+                */
 
             vec3 unit_r = normalize(r);
             float specific_acc = constants.G / dist2;
@@ -116,13 +123,14 @@ void World::gravitate(float dt) {
             b->vel += dt * unit_r * specific_acc * a->mass;
         }
     }
+    cout << numberOfParticles<< endl;
 }
 
 void World::step(float dt) {
     reset();
     find_intersections();
     //solve_intersections();
-    gravitate(dt);
+    gravitate(dt);//Move to cs
 
     solve_contacts(dt);
     integrate(dt);
