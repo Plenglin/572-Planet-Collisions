@@ -129,8 +129,6 @@ public:
 	//texture data
 	GLuint Texture;
 	GLuint Texture2, HeightTex;
-	GLuint ssbo_GPU_id;
-	GLuint computeProgram;
 
 	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
@@ -353,6 +351,8 @@ public:
         glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		world.load_compute();
+
         mycam.pos = vec3(-20, 0, -40);
         world.constants.RESTITUTION = -0.05f;
 
@@ -411,31 +411,6 @@ public:
 		heightshader->addUniform("M");
 		heightshader->addAttribute("vertPos");
 		heightshader->addAttribute("vertTex");
-
-		std::string ShaderString = readFileAsString("../resources/compute.glsl");
-		const char* shader = ShaderString.c_str();
-		GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
-		glShaderSource(computeShader, 1, &shader, nullptr);
-
-		GLint rc;
-		CHECKED_GL_CALL(glCompileShader(computeShader));
-		CHECKED_GL_CALL(glGetShaderiv(computeShader, GL_COMPILE_STATUS, &rc));
-		if (!rc)	//error compiling the shader file
-		{
-			GLSL::printShaderInfoLog(computeShader);
-			std::cout << "Error compiling fragment shader " << std::endl;
-			exit(1);
-		}
-
-		computeProgram = glCreateProgram();
-		glAttachShader(computeProgram, computeShader);
-		glLinkProgram(computeProgram);
-		glUseProgram(computeProgram);
-
-		GLuint block_index;
-		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-		GLuint ssbo_binding_point_index = 2;
-		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
 	}
 	
 	void compute(double frametime) {

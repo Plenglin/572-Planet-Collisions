@@ -12,6 +12,7 @@
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
+#include <glad/glad.h>
 
 
 #define MAX_CONTACTS_PER_PARTICLE 102
@@ -76,8 +77,8 @@ struct GPUInput {
     GPUParticle particles[];
 
     static uint get_size(uint gpu_particle_count);
-    void read(std::vector<Particle> &src);
-    void write(std::vector<Particle> &dst, std::vector<Contact> &contacts);
+    void read_from(std::vector<Particle*> &src);
+    void write_to(std::vector<Particle*> &dst, std::vector<Contact> &contacts);
 };
 
 struct Particle {
@@ -99,11 +100,9 @@ struct Particle {
     float draw_scale = 1.0f;
 };
 
-uint gpu_input_size(uint gpu_particle_count) {
-    return gpu_particle_count * sizeof(GPUParticle);
-}
-
 struct World {
+    int computeProgram;
+
     std::vector<Particle*> particles;
     // The set of contacts.
     std::vector<Contact> contacts;
@@ -111,6 +110,8 @@ struct World {
     Constants constants;
 
     World();
+    void load_compute();
+
     void reset();
     bool deintersect_all(int iterations);
 
@@ -121,6 +122,8 @@ struct World {
     void integrate(float dt);
 
     void step(float dt);
+
+    GLuint gpu_particles, atomic_buf;
 };
 
 

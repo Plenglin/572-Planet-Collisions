@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include "World.h"
+#include "../Program.h"
+#include "../GLSL.h"
 #include<iostream>
 
 using namespace glm;
@@ -56,14 +58,50 @@ void World::integrate(float dt) {
 
 //position, mass 552 particles
 void World::gravitate(float dt) {
+    {
+        // Write
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+        ssbo->read_from(particles);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
+
+    glShaderStorageBlockBinding(computeProgram, 0, 0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+    glUseProgram(computeProgram);
+    //activate atomic counter
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
+    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
+
+    glDispatchCompute(1, 1, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+    {
+        // Read
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        ssbo->write_to(particles, contacts);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 }
 
 void World::step(float dt) {
     reset();
     find_intersections();
     //solve_intersections();
-    gravitate(dt);//Move to cs
+    gravitate(dt);
 
     solve_contacts(dt);
     integrate(dt);
@@ -156,6 +194,41 @@ bool World::deintersect_all(int iterations) {
     return !contacts.empty();
 }
 
+void World::load_compute() {
+    std::string ShaderString = readFileAsString("../resources/compute.glsl");
+    const char* shader = ShaderString.c_str();
+    GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(computeShader, 1, &shader, nullptr);
+
+    GLint rc;
+    CHECKED_GL_CALL(glCompileShader(computeShader));
+    CHECKED_GL_CALL(glGetShaderiv(computeShader, GL_COMPILE_STATUS, &rc));
+    if (!rc)	//error compiling the shader file
+    {
+        GLSL::printShaderInfoLog(computeShader);
+        std::cout << "Error compiling fragment shader " << std::endl;
+        exit(1);
+    }
+
+    computeProgram = glCreateProgram();
+    glAttachShader(computeProgram, computeShader);
+    glLinkProgram(computeProgram);
+    glUseProgram(computeProgram);
+
+    GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
+    glShaderStorageBlockBinding(computeProgram, block_index, 2);
+
+    glGenBuffers(1, &gpu_particles);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 1024 * 1024, nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gpu_particles);
+
+    glGenBuffers(1, &atomic_buf);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
+    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+}
+
 void Contact::solve_momentum(float dt, Constants &constants) {
     if (state == CONTACT_STATE_STABLE) {
         return;
@@ -234,22 +307,22 @@ uint GPUInput::get_size(uint gpu_particle_count) {
     return 16 + gpu_particle_count * sizeof(GPUParticle);
 }
 
-void GPUInput::read(vector<Particle> &src) {
+void GPUInput::read_from(vector<Particle*> &src) {
+    size = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
-        particles[i].pos = p.pos;
-        particles[i].radius = p.radius;
-        particles[i].mass = p.mass;
+        particles[i].pos = p->pos;
+        particles[i].radius = p->radius;
+        particles[i].mass = p->mass;
         particles[i].contact_count = 0;
     }
 }
 
-void GPUInput::write(vector<Particle> &dst, vector<Contact> &contacts) {
+void GPUInput::write_to(vector<Particle*> &dst, vector<Contact> &contacts) {
     for (int i = 0; i < dst.size(); i++) {
         auto &p = dst[i];
-         p.pos = particles[i].pos;
-         p.radius = particles[i].radius;
-         p.mass = particles[i].mass;
-
+        p->pos = particles[i].pos;
+        p->radius = particles[i].radius;
+        p->mass = particles[i].mass;
     }
 }
