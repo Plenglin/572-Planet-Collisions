@@ -19,10 +19,6 @@ void Particle::integrate(float dt) {
     }
 }
 
-void Particle::apply_acc(glm::vec3 r, glm::vec3 da) {
-    vel += da;
-}
-
 bool Particle::is_touching(Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
     vec3 delta = pos - b->pos;
     float dist = length(delta);
@@ -39,48 +35,9 @@ bool Particle::is_touching(Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
     return depth >= 0;
 }
 
-void Particle::solve_contacts() {
-}
-
 void Particle::reset() {
     impulse = vec3(0, 0, 0);
     ang_impulse = vec3(0, 0, 0);
-    group = nullptr;
-}
-
-GroupSearchData Particle::get_group_members(std::unordered_set<Particle*> unvisited) {
-    std::vector<Particle*> touching{this};
-    if (contacts.empty()) {
-        return GroupSearchData { true, touching };
-    }
-
-    std::vector<Particle*> to_visit{this};
-    unvisited.erase(this);
-    bool stable = true;
-    while (!to_visit.empty()) {
-        // Pop element
-        auto *particle = to_visit.back();
-        to_visit.pop_back();
-
-        // We have visited this?
-        if (unvisited.find(particle) == unvisited.end()) {
-            continue;
-        }
-        unvisited.erase(particle);
-
-        // Check neighbors
-        for (auto &neighbor_pair : particle->contacts) {
-            // If not approaching, then unstable
-            if (neighbor_pair.second->state != CONTACT_STATE_STABLE) {
-                stable = false;
-            }
-            auto *neighbor = neighbor_pair.first;
-            to_visit.push_back(neighbor);
-            touching.push_back(neighbor);
-        }
-    }
-
-    return GroupSearchData {stable, touching};
 }
 
 Particle::Particle(float mass, float radius) : mass(mass), radius(radius), moi(2.0f/5 * mass * radius * radius) {
@@ -215,22 +172,6 @@ bool World::deintersect_all(int iterations) {
     return !contacts.empty();
 }
 
-void World::create_groups() {
-    if (particles.empty()) return;
-
-    std::unordered_set<Particle*> unvisited(particles.begin(), particles.end());
-
-    while (!unvisited.empty()) {
-        auto p = *unvisited.begin();
-        unvisited.erase(p);
-
-        auto result = p->get_group_members(unvisited);
-        if (result.stable) {
-
-        }
-    }
-}
-
 void Contact::solve_momentum(float dt, Constants &constants) {
     if (state == CONTACT_STATE_STABLE) {
         return;
@@ -302,13 +243,5 @@ void Contact::deintersect() const {
 }
 
 Contact::Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos) : a(a), b(b), normal(normal), pos(pos) {
-
-}
-
-ContactGroup::ContactGroup(int id) : id(id), active(true), grav_force(0, 0, 0) {
-
-}
-
-void ContactGroup::calculate_params() {
 
 }

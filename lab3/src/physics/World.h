@@ -61,16 +61,6 @@ namespace std {
     };
 }
 
-struct ContactGroup;
-
-struct GroupSearchData {
-    // If this group is stable (i.e. internal gravitation wouldn't change anything)
-    bool stable;
-
-    // Particles that are touching.
-    std::vector<Particle *> touching;
-};
-
 struct Particle {
     // State
     glm::vec3 pos, vel = glm::vec3(0, 0, 0), ang_vel;
@@ -78,41 +68,22 @@ struct Particle {
     // Accumulator
     glm::vec3 impulse, ang_impulse;
     std::unordered_map<Particle*, Contact*> contacts;
-    ContactGroup *group;
     void *userdata;
 
     float mass, radius, moi;
     Particle(float mass, float radius);
-    virtual void integrate(float dt);
-    virtual void apply_acc(glm::vec3 r, glm::vec3 da);
+    void integrate(float dt);
     bool is_touching(Particle *other, glm::vec3 *normal, glm::vec3 *cpos);
-    void solve_contacts();
 
     void reset();
 
-    // DFS for particles in this group
-    GroupSearchData get_group_members(std::unordered_set<Particle *> unvisited);
-
     float draw_scale = 1.0f;
-};
-
-// Represents a bunch of particles touching each other.
-struct ContactGroup {
-    int id;
-    std::unordered_set<Particle*> particles;
-    glm::vec3 pos;
-    glm::vec3 grav_force;
-    float mass;
-    bool active;
-    explicit ContactGroup(int id);
-    void calculate_params();
 };
 
 struct World {
     std::vector<Particle*> particles;
     // The set of contacts.
     std::vector<Contact> contacts;
-    std::vector<ContactGroup> groups;
     unsigned long steps = 0;
     Constants constants;
 
@@ -124,7 +95,6 @@ struct World {
     void find_intersections();
     void solve_intersections();
     void solve_contacts(float dt);
-    void create_groups();
     void gravitate(float dt);
     void integrate(float dt);
 
