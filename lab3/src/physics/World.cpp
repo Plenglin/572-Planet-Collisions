@@ -63,7 +63,7 @@ void World::calculate_gpu(float dt) {
         auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        ssbo->read_from(particles);
+        ssbo->upload(particles);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -88,7 +88,7 @@ void World::calculate_gpu(float dt) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         contact_index.clear();
-        ssbo->write_to(dt, particles, contact_index);
+        ssbo->download(dt, particles, contact_index);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -124,14 +124,18 @@ void World::find_intersections() {
 
         auto a_iter = contact_index.find(it->a);
         if (a_iter == contact_index.end()) {
-            delete_contact();
+            it->a->contacts.erase(it->b);
+            it->b->contacts.erase(it->a);
+            it = contacts.erase(it);
             continue;
         }
 
         auto &b_index = a_iter->second;
         auto b_iter = b_index.find(it->b);
         if (b_iter == b_index.end()) {
-            delete_contact();
+            it->a->contacts.erase(it->b);
+            it->b->contacts.erase(it->a);
+            it = contacts.erase(it);
             continue;
         }
 
@@ -202,6 +206,7 @@ void World::solve_contacts(float dt) {
 bool World::deintersect_all(int iterations) {
     do {
         contacts.clear();
+        calculate_gpu(0.0);
         find_intersections();
         solve_intersections();
     } while (!contacts.empty() && --iterations > 0);
@@ -237,7 +242,7 @@ void World::load_compute() {
 
     glGenBuffers(1, &gpu_particles);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 1024 * 1024, nullptr, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 2048 * sizeof(GPUParticle), nullptr, GL_DYNAMIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gpu_particles);
 
     glGenBuffers(1, &atomic_buf);
@@ -324,7 +329,7 @@ uint GPUInput::get_size(uint gpu_particle_count) {
     return 16 + gpu_particle_count * sizeof(GPUParticle);
 }
 
-void GPUInput::read_from(vector<Particle*> &src) {
+void GPUInput::upload(vector<Particle*> &src) {
     particles_count = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
@@ -336,13 +341,11 @@ void GPUInput::read_from(vector<Particle*> &src) {
     }
 }
 
-void GPUInput::write_to(float dt, vector<Particle *> &dst, ContactIndex &contacts) {
+void GPUInput::download(float dt, vector<Particle *> &dst, ContactIndex &contacts) {
     for (int i = 0; i < dst.size(); i++) {
         auto *p = dst[i];
-        auto &gpu = particles[i];
+        auto gpu = particles[i];
         p->pos = gpu.pos;
-        p->radius = gpu.radius;
-        p->mass = gpu.mass;
         p->vel += dt * gpu.gravity_acc;
 
         for (int j = 0; j < gpu.contact_count; j++) {
