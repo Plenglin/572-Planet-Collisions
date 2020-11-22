@@ -80,3 +80,25 @@ After
 ```
 
 The number of iterations could be tuned, or calculated in a smarter way (I was thinking, maybe calculate contacts within contiguous groups that are all touching each other to reduce the number of iterations) but it works well enough for our purposes.
+
+# 2-body problem
+
+## Momentum
+
+If two balls are leaving each other, or if they have low relative velocity/the contact is marked as "stable," then there is no momentum or friction to be applied.
+
+The 3D momentum problem gets reduced to a 1D momentum problem along the collision normal $$n$$. So, we use $$v \cdot n$$ as our velocity and plug it into the conservation of momentum equation with restitution derived [here](https://en.wikipedia.org/wiki/Coefficient_of_restitution#Derivation). 
+
+## Friction
+
+From the final momenta, we derive the impulse $$I$$. Multiplying $$I$$ by some arbitrary coefficient approximates the normal force $$F_n$$, giving us the magnitude of friction $$|f| = \mu F_n$$ where $$\mu$$ is the coefficient of friction.
+
+Next, we need to calculate the relative surface velocity of the particles. Suppose we were only looking at a single particle. The contact point is essentially undergoing two movements:
+
+- it is moving at $$v$$, the particle's translational velocity
+- it is moving along the particle's surface due to rotation, or $$\omega \times (P - s)$$
+
+So, the surface velocity at the contact point of a single particle is $$v + \omega \times (P - s)$$. The relative surface velocity $$\Delta v_{surf}$$ is just the difference between the two particles' surface velocities at the contact point.
+
+However, friction can only happen tangentially to the normal, so the direction of friction is actually in the direction of $$\Delta v_{surf} - proj_n(\Delta v_{surf})$$ (its orthogonal component). Normalize this, and multiply by the magnitude derived earlier, and we have our final friction. 
+
