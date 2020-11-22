@@ -64,14 +64,23 @@ namespace std {
     };
 }
 
+struct GPUContact {
+    glm::vec3 normal;
+    uint other;
+    glm::vec3 pos;
+    uint _1;
+};
+
 struct GPUParticle {
     glm::vec3 pos;
     float radius;
     glm::vec3 gravity_acc;
     float mass;
     uint contact_count;
-    uint contacts[MAX_CONTACTS_PER_PARTICLE];
+    GPUContact contacts[MAX_CONTACTS_PER_PARTICLE];
 };
+
+typedef std::unordered_map<Particle*, std::unordered_map<Particle*, GPUContact>> ContactIndex;
 
 struct GPUInput {
     uint particles_count;
@@ -80,7 +89,7 @@ struct GPUInput {
 
     static uint get_size(uint gpu_particle_count);
     void read_from(std::vector<Particle*> &src);
-    void write_to(float dt, std::vector<Particle *> &dst, std::vector<Contact> &contacts);
+    void write_to(float dt, std::vector<Particle *> &dst, ContactIndex &contacts);
 };
 
 struct Particle {
@@ -106,6 +115,8 @@ struct World {
     int computeProgram;
 
     std::vector<Particle*> particles;
+    // GPU contacts.
+    ContactIndex contact_index;
     // The set of contacts.
     std::vector<Contact> contacts;
     unsigned long steps = 0;
@@ -120,7 +131,7 @@ struct World {
     void find_intersections();
     void solve_intersections();
     void solve_contacts(float dt);
-    void gravitate(float dt);
+    void calculate_gpu(float dt);
     void integrate(float dt);
 
     void step(float dt);

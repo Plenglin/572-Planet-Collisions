@@ -56,8 +56,7 @@ void World::integrate(float dt) {
     }
 }
 
-//position, mass 552 particles
-void World::gravitate(float dt) {
+void World::calculate_gpu(float dt) {
     {
         // Write
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
@@ -88,7 +87,8 @@ void World::gravitate(float dt) {
         auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        ssbo->write_to(dt, particles, contacts);
+        contact_index.clear();
+        ssbo->write_to(dt, particles, contact_index);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -98,9 +98,9 @@ void World::gravitate(float dt) {
 
 void World::step(float dt) {
     reset();
+    calculate_gpu(dt);
+
     find_intersections();
-    //solve_intersections();
-    gravitate(dt);
 
     solve_contacts(dt);
     integrate(dt);
@@ -114,37 +114,52 @@ void World::reset() {
 }
 
 void World::find_intersections() {
-    for (auto it = contacts.begin(); it != contacts.end();) {
-        if (!it->a->is_touching(it->b, &it->normal, nullptr)) {
+    // Process existing contacts
+    for (auto it = contacts.begin(); it != contacts.end(); it++) {
+        auto delete_contact = [&it, this]() {
             it->a->contacts.erase(it->b);
             it->b->contacts.erase(it->a);
             it = contacts.erase(it);
+        };
+
+        auto a_iter = contact_index.find(it->a);
+        if (a_iter == contact_index.end()) {
+            delete_contact();
             continue;
         }
+
+        auto &b_index = a_iter->second;
+        auto b_iter = b_index.find(it->b);
+        if (b_iter == b_index.end()) {
+            delete_contact();
+            continue;
+        }
+
+        // Contact exists from last iteration, update it
+        auto &c = b_iter->second;
+        it->normal = c.normal;
+        it->pos = c.pos;
         it->lifetime++;
         ++it;
+
+        // Delete in index to mark as processed
+        b_index.erase(b_iter);
     }
 
-    // Find all contacts
-    for (auto ita = particles.begin(); ita != particles.end(); ita++) {
-        auto *a = *ita;
-        for (auto itb = particles.begin(); itb != ita; itb++) {
-            auto *b = *itb;
+    // Process new contacts
+    for (auto & ita : contact_index) {
+        auto a = ita.first;
+        auto &b_index = ita.second;
+        for (auto & itb : b_index) {
+            auto b = itb.first;
+            auto &c = itb.second;
 
-            if (a->contacts.find(b) != a->contacts.end())
-                continue;  // Contact already exists
-
-            glm::vec3 normal, cpos;
-            if (!a->is_touching(b, &normal, &cpos))
-                continue;
-
-            contacts.emplace_back(a, b, normal, cpos);  // union of contacts for all iterations
+            contacts.emplace_back(a, b, c.normal, c.pos);  // union of contacts for all iterations
             auto *ptr = &contacts.back();
             a->contacts[b] = ptr;
             b->contacts[a] = ptr;
         }
     }
-    
 }
 
 void World::solve_intersections() {
@@ -313,19 +328,28 @@ void GPUInput::read_from(vector<Particle*> &src) {
     particles_count = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
-        particles[i].pos = p->pos;
-        particles[i].radius = p->radius;
-        particles[i].mass = p->mass;
-        particles[i].contact_count = 0;
+        auto &gpu = particles[i];
+        gpu.pos = p->pos;
+        gpu.radius = p->radius;
+        gpu.mass = p->mass;
+        gpu.contact_count = 0;
     }
 }
 
-void GPUInput::write_to(float dt, vector<Particle *> &dst, vector<Contact> &contacts) {
+void GPUInput::write_to(float dt, vector<Particle *> &dst, ContactIndex &contacts) {
     for (int i = 0; i < dst.size(); i++) {
-        auto &p = dst[i];
-        p->pos = particles[i].pos;
-        p->radius = particles[i].radius;
-        p->mass = particles[i].mass;
-        p->vel += dt * particles[i].gravity_acc;
+        auto *p = dst[i];
+        auto &gpu = particles[i];
+        p->pos = gpu.pos;
+        p->radius = gpu.radius;
+        p->mass = gpu.mass;
+        p->vel += dt * gpu.gravity_acc;
+
+        for (int j = 0; j < gpu.contact_count; j++) {
+            // Build the contact index
+            auto &gpu_contact = gpu.contacts[j];
+            auto bi = dst[gpu_contact.other];
+            contacts[p][bi] = gpu_contact;
+        }
     }
 }
