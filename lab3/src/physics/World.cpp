@@ -40,50 +40,17 @@ void World::integrate(float dt) {
     }
 }
 
-//position, mass 552 particles
 void World::gravitate(float dt) {
-    {
-        // Write
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
-        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-        ssbo->read_from(particles);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-    }
-
-    glShaderStorageBlockBinding(computeProgram, ssbo_block_index, 0);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gpu_particles);
-
-    glUseProgram(computeProgram);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
-
-    glDispatchCompute(1, 1, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-
-    {
-        // Read
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
-        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-        ssbo->write_to(dt, particles, contacts);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    for (auto & particle : particles) {
+        particle->vel += particle->gravity_acc * dt;
     }
 }
 
 void World::step(float dt) {
     reset();
+    compute_gpu();
+
     find_intersections();
-    //solve_intersections();
     gravitate(dt);
 
     solve_contacts(dt);
@@ -175,6 +142,45 @@ bool World::deintersect_all(int iterations) {
         solve_intersections();
     } while (!contacts.empty() && --iterations > 0);
     return !contacts.empty();
+}
+
+void World::compute_gpu() {
+    {
+        // Write
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        ssbo->read_from(particles);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
+
+    glShaderStorageBlockBinding(computeProgram, ssbo_block_index, 0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gpu_particles);
+
+    glUseProgram(computeProgram);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
+    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
+
+    glDispatchCompute(1, 1, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+    {
+        // Read
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        ssbo->write_to(particles, contacts);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 }
 
 void World::load_compute() {
@@ -320,12 +326,12 @@ void GPUInput::read_from(vector<Particle*> &src) {
     }
 }
 
-void GPUInput::write_to(float dt, vector<Particle *> &dst, vector<Contact> &contacts) {
+void GPUInput::write_to(vector<Particle *> &dst, vector<Contact> &contacts) {
     for (int i = 0; i < dst.size(); i++) {
         auto &p = dst[i];
         p->pos = particles[i].pos;
         p->radius = particles[i].radius;
         p->mass = particles[i].mass;
-        p->vel += dt * particles[i].gravity_acc;
+        p->gravity_acc = particles[i].gravity_acc;
     }
 }

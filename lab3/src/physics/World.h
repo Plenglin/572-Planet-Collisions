@@ -80,7 +80,7 @@ struct GPUInput {
 
     static glm::uint get_size(glm::uint gpu_particle_count);
     void read_from(std::vector<Particle*> &src);
-    void write_to(float dt, std::vector<Particle *> &dst, std::vector<Contact> &contacts);
+    void write_to(std::vector<Particle *> &dst, std::vector<Contact> &contacts);
 };
 
 struct Particle {
@@ -89,6 +89,7 @@ struct Particle {
     glm::mat4 rot = glm::mat4(1.0f);
     // Accumulator
     glm::vec3 impulse, ang_impulse;
+    glm::vec3 gravity_acc;
     std::unordered_map<Particle*, Contact*> contacts;
     void *userdata;
 
@@ -114,6 +115,7 @@ struct World {
     void load_compute();
 
     void reset();
+    void compute_gpu();
     bool deintersect_all(int iterations);
 
     bool is_touching(Particle *a, Particle *b, glm::vec3 *normal, glm::vec3 *cpos);
