@@ -23,22 +23,6 @@ void Particle::integrate(float dt) {
     }
 }
 
-bool Particle::is_touching(Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
-    vec3 delta = pos - b->pos;
-    float dist = length(delta);
-    vec3 unit_delta = delta / dist;
-    float radius_sum = radius + b->radius;
-    float depth = radius_sum - dist;
-    if (normal != nullptr) {
-        *normal = normalize(delta) * depth;
-    }
-    if (cpos != nullptr) {
-        auto center_dist = radius - depth / 2;
-        *cpos = pos + unit_delta * center_dist;
-    }
-    return depth >= 0;
-}
-
 void Particle::reset() {
     impulse = vec3(0, 0, 0);
     ang_impulse = vec3(0, 0, 0);
@@ -115,7 +99,7 @@ void World::reset() {
 
 void World::find_intersections() {
     for (auto it = contacts.begin(); it != contacts.end();) {
-        if (!it->a->is_touching(it->b, &it->normal, nullptr)) {
+        if (!is_touching(it->a, it->b, &it->normal, nullptr)) {
             it->a->contacts.erase(it->b);
             it->b->contacts.erase(it->a);
             it = contacts.erase(it);
@@ -135,7 +119,7 @@ void World::find_intersections() {
                 continue;  // Contact already exists
 
             glm::vec3 normal, cpos;
-            if (!a->is_touching(b, &normal, &cpos))
+            if (!is_touching(a, b, &normal, &cpos))
                 continue;
 
             contacts.emplace_back(a, b, normal, cpos);  // union of contacts for all iterations
@@ -229,6 +213,22 @@ void World::load_compute() {
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
     glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+}
+
+bool World::is_touching(Particle *a, Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
+    vec3 delta = a->pos - b->pos;
+    float dist = length(delta);
+    vec3 unit_delta = delta / dist;
+    float radius_sum = a->radius + b->radius;
+    float depth = radius_sum - dist;
+    if (normal != nullptr) {
+        *normal = normalize(delta) * depth;
+    }
+    if (cpos != nullptr) {
+        auto center_dist = a->radius - depth / 2;
+        *cpos = a->pos + unit_delta * center_dist;
+    }
+    return depth >= 0;
 }
 
 void Contact::solve_momentum(float dt, Constants &constants) {

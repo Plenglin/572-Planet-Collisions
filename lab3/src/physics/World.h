@@ -95,7 +95,6 @@ struct Particle {
     float mass, radius, moi;
     Particle(float mass, float radius);
     void integrate(float dt);
-    bool is_touching(Particle *other, glm::vec3 *normal, glm::vec3 *cpos);
 
     void reset();
 
@@ -116,6 +115,8 @@ struct World {
 
     void reset();
     bool deintersect_all(int iterations);
+
+    bool is_touching(Particle *a, Particle *b, glm::vec3 *normal, glm::vec3 *cpos);
 
     void find_intersections();
     void solve_intersections();
