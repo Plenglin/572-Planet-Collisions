@@ -305,7 +305,7 @@ Contact::Contact(Particle *a, Particle *b, glm::vec3 normal, glm::vec3 pos) : a(
 
 }
 
-uint GPUInput::get_size(uint gpu_particle_count) {
+uint GPUInput::get_size(glm::uint gpu_particle_count) {
     return 16 + gpu_particle_count * sizeof(GPUParticle);
 }
 

@@ -69,16 +69,16 @@ struct GPUParticle {
     float radius;
     glm::vec3 gravity_acc;
     float mass;
-    uint contact_count;
-    uint contacts[MAX_CONTACTS_PER_PARTICLE];
+    glm::uint contact_count;
+    glm::uint contacts[MAX_CONTACTS_PER_PARTICLE];
 };
 
 struct GPUInput {
-    uint particles_count;
-    uint _1, _2, _3;
+    glm::uint particles_count;
+    glm::uint _1, _2, _3;
     GPUParticle particles[];
 
-    static uint get_size(uint gpu_particle_count);
+    static glm::uint get_size(glm::uint gpu_particle_count);
     void read_from(std::vector<Particle*> &src);
     void write_to(float dt, std::vector<Particle *> &dst, std::vector<Contact> &contacts);
 };
