@@ -52,11 +52,13 @@ void main() {
             float depth = radius_sum - dist;
             if (depth > 0 && i > j) {
                 uint write_index = atomicAdd(particles[i].contact_count, 1);
+                if (write_index >= MAX_CONTACTS_PER_PARTICLE) {
+                    continue;
+                }
                 particles[i].contacts[write_index].normal = normalize(r) * depth;
                 particles[i].contacts[write_index].other = j;
                 float center_dist = particles[i].radius - depth / 2;
                 particles[i].contacts[write_index].pos = particles[i].pos + unit_r * center_dist;
-                particles[i].contacts[write_index]._1 = float(i);
             }
         }
 	}

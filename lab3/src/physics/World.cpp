@@ -77,11 +77,12 @@ void World::find_intersections() {
     }
 
     // Find all contacts
-    for (auto ita = particles.begin(); ita != particles.end(); ita++) {
-        auto *a = *ita;
-        for (auto itb = particles.begin(); itb != ita; itb++) {
-            auto *b = *itb;
-
+    for (auto &pa : contact_index) {
+        auto a = pa.first;
+        auto &bmap = pa.second;
+        for (auto &pb : bmap) {
+            auto b = pb.first;
+            auto &gpuc = pb.second;
             if (a->contacts.find(b) != a->contacts.end())
                 continue;  // Contact already exists
 
@@ -339,7 +340,12 @@ void GPUInput::download(vector<Particle *> &dst, ContactIndex &contacts) {
         p->mass = gpu.mass;
         p->gravity_acc = gpu.gravity_acc;
 
-        for (int j = 0; j < gpu.contact_count; j++) {
+        uint count = gpu.contact_count;
+        if (count > MAX_CONTACTS_PER_PARTICLE) {
+            cout << "#" << i << " has " << count << " collisions" << endl;
+            count = MAX_CONTACTS_PER_PARTICLE;
+        }
+        for (int j = 0; j < count; j++) {
             // Build the contact index
             auto &gpu_contact = gpu.contacts[j];
             auto bi = dst[gpu_contact.other];
