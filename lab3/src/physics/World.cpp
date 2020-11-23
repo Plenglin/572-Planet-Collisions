@@ -151,7 +151,7 @@ void World::compute_gpu() {
         auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        ssbo->read_from(particles);
+        ssbo->upload(particles);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -175,7 +175,8 @@ void World::compute_gpu() {
         auto *ssbo = static_cast<GPUInput *>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        ssbo->write_to(particles, contacts);
+        contact_index.clear();
+        ssbo->download(particles, contact_index);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gpu_particles);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -315,7 +316,7 @@ uint GPUInput::get_size(glm::uint gpu_particle_count) {
     return 16 + gpu_particle_count * sizeof(GPUParticle);
 }
 
-void GPUInput::read_from(vector<Particle*> &src) {
+void GPUInput::upload(vector<Particle*> &src) {
     particles_count = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
@@ -326,7 +327,7 @@ void GPUInput::read_from(vector<Particle*> &src) {
     }
 }
 
-void GPUInput::write_to(vector<Particle *> &dst, vector<Contact> &contacts) {
+void GPUInput::download(vector<Particle *> &dst, ContactIndex &contacts) {
     for (int i = 0; i < dst.size(); i++) {
         auto &p = dst[i];
         p->pos = particles[i].pos;

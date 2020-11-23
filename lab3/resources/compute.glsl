@@ -2,9 +2,15 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 #define G 4
-#define numberOfSpheres 552
 #define WORKERS 256
-#define MAX_CONTACTS_PER_PARTICLE 102
+#define MAX_CONTACTS_PER_PARTICLE 50
+
+struct GPUContact {
+    vec3 normal;
+    uint other;
+    vec3 pos;
+    float _1;
+};
 
 struct GPUParticle {
     vec3 pos;
@@ -12,7 +18,8 @@ struct GPUParticle {
     vec3 gravity_acc;
     float mass;
     uint contact_count;
-    uint contacts[MAX_CONTACTS_PER_PARTICLE];
+    uint _1, _2, _3;
+    GPUContact contacts[MAX_CONTACTS_PER_PARTICLE];
 };
 
 layout(local_size_x = WORKERS, local_size_y = 1) in;
