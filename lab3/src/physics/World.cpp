@@ -42,7 +42,8 @@ void World::integrate(float dt) {
 
 void World::gravitate(float dt) {
     for (auto & particle : particles) {
-        particle->vel += particle->gravity_acc * dt;
+        auto dv = particle->gravity_acc * dt;
+        particle->vel += dv;
     }
 }
 

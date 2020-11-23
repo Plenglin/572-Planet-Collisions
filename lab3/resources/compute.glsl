@@ -43,7 +43,7 @@ void main() {
         for (uint j = 0; j < particles_count; j++) {
             if (i == j) continue;
 
-            vec3 r = particles[j].pos - particles[i].pos;
+            vec3 r = particles[i].pos - particles[j].pos;
             float dist2 = dot(r, r);
             float dist = sqrt(dist2);
             vec3 unit_r = r / dist;
