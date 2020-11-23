@@ -138,6 +138,7 @@ void World::solve_contacts(float dt) {
 bool World::deintersect_all(int iterations) {
     do {
         contacts.clear();
+        compute_gpu();
         find_intersections();
         solve_intersections();
     } while (!contacts.empty() && --iterations > 0);
@@ -223,19 +224,20 @@ void World::load_compute() {
 }
 
 bool World::is_touching(Particle *a, Particle *b, glm::vec3 *normal, glm::vec3 *cpos) {
-    vec3 delta = a->pos - b->pos;
-    float dist = length(delta);
-    vec3 unit_delta = delta / dist;
-    float radius_sum = a->radius + b->radius;
-    float depth = radius_sum - dist;
-    if (normal != nullptr) {
-        *normal = normalize(delta) * depth;
-    }
-    if (cpos != nullptr) {
-        auto center_dist = a->radius - depth / 2;
-        *cpos = a->pos + unit_delta * center_dist;
-    }
-    return depth >= 0;
+    auto ita = contact_index.find(a);
+    if (ita == contact_index.end()) return false;
+
+    auto &mapb = ita->second;
+    auto itb = mapb.find(b);
+    if (itb == mapb.end()) return false;
+
+    auto gpuc = itb->second;
+    if (normal != nullptr)
+        *normal = gpuc.normal;
+    if (cpos != nullptr)
+        *cpos = gpuc.pos;
+
+    return true;
 }
 
 void Contact::solve_momentum(float dt, Constants &constants) {
@@ -320,19 +322,28 @@ void GPUInput::upload(vector<Particle*> &src) {
     particles_count = src.size();
     for (int i = 0; i < src.size(); i++) {
         auto &p = src[i];
-        particles[i].pos = p->pos;
-        particles[i].radius = p->radius;
-        particles[i].mass = p->mass;
-        particles[i].contact_count = 0;
+        auto &gpu = particles[i];
+        gpu.pos = p->pos;
+        gpu.radius = p->radius;
+        gpu.mass = p->mass;
+        gpu.contact_count = 0;
     }
 }
 
 void GPUInput::download(vector<Particle *> &dst, ContactIndex &contacts) {
     for (int i = 0; i < dst.size(); i++) {
-        auto &p = dst[i];
-        p->pos = particles[i].pos;
-        p->radius = particles[i].radius;
-        p->mass = particles[i].mass;
-        p->gravity_acc = particles[i].gravity_acc;
+        auto p = dst[i];
+        auto &gpu = particles[i];
+        p->pos = gpu.pos;
+        p->radius = gpu.radius;
+        p->mass = gpu.mass;
+        p->gravity_acc = gpu.gravity_acc;
+
+        for (int j = 0; j < gpu.contact_count; j++) {
+            // Build the contact index
+            auto &gpu_contact = gpu.contacts[j];
+            auto bi = dst[gpu_contact.other];
+            contacts[p][bi] = gpu_contact;
+        }
     }
 }

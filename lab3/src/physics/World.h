@@ -66,7 +66,7 @@ namespace std {
 
 struct GPUContact {
     glm::vec3 normal;
-    glm::uint other;
+    uint other;
     glm::vec3 pos;
     float _1;
 };
@@ -77,6 +77,7 @@ struct GPUParticle {
     glm::vec3 gravity_acc;
     float mass;
     glm::uint contact_count;
+    glm::uint _1, _2, _3;
     GPUContact contacts[MAX_CONTACTS_PER_PARTICLE];
 };
 
