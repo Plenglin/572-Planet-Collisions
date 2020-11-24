@@ -60,6 +60,9 @@ void main() {
                 float center_dist = particles[i].radius - depth / 2;
                 particles[i].contacts[write_index].pos = particles[i].pos + unit_r * center_dist;
             }
+
+            float specific_acc = G / dist2;
+            particles[i].gravity_acc -= unit_r * (specific_acc * particles[j].mass);
         }
 	}
 }

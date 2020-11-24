@@ -18,8 +18,8 @@
 #define MAX_CONTACTS_PER_PARTICLE 50
 
 struct Constants {
-    float G = 10.0f;
-    float RESTITUTION = 0.99f;
+    float G = 5.0f;
+    float RESTITUTION = 0.98f;
     float COLLISION_IMPULSE_TO_FRICTION = 5.0f;
     float STABLE_THRESH = 0.9f;
 };
