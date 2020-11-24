@@ -353,19 +353,19 @@ public:
 
 		world.load_compute();
 
-        mycam.pos = vec3(-20, 0, -40);
-        world.constants.RESTITUTION = -0.05f;
+        mycam.pos = vec3(0, 0, -80);
+        world.constants.RESTITUTION = -0.5f;
 
 		Particle *p = new Particle(8, 2);
-        p->pos = vec3(0, 0, 0);
-        p->vel = vec3(0, -0,0);
+        p->pos = vec3(-5, 0, 0);
+        p->vel = vec3(0, 0, 0);
         p->userdata = sphere_part.get();
         p->draw_scale = 2;
         world.particles.push_back(p);
 
         p = new Particle(1, 1);
-        p->pos = vec3(-10, 0, 0);
-        p->vel = vec3(10, 0.1,0);
+        p->pos = vec3(-30, 0, 0);
+        p->vel = vec3(1, 0.2,0);
         p->userdata = sphere_part.get();
         world.particles.push_back(p);
     }
@@ -415,7 +415,7 @@ public:
 	
 	void compute(double frametime) {
 	    static float dt = 1 / 60.0f;
-	    static int ratio = 2;
+	    static int ratio = 1;
 	    std::cout << 1 / frametime << " fps" << std::endl;
 	    for (int i = 0; i < ratio; i++) {
             world.step(dt);

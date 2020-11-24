@@ -66,7 +66,7 @@ namespace std {
 
 struct GPUContact {
     glm::vec3 normal;
-    uint other;
+    glm::uint other;
     glm::vec3 pos;
     float _1;
 };
