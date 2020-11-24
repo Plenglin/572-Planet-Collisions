@@ -1,0 +1,149 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Asteroid-Planet Collision</title>
+    <link rel="stylesheet" type="text/css" href="./css/style.css">
+    <style>
+    </style>
+    
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+
+    <!-- jQuery and JS bundle w/ Popper.js -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+
+    <!-- To automatically render math in text elements, include the auto-render extension: -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+        onload="renderMathInElement(document.body);"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="jumbotron">
+        <h1 class="display-4">Asteroid-Planet Collision</h1>
+        <hr>
+        <p>Created by <a href="https://github.com/nauticalmonkey">Justin Evans</a>, <a href="https://astrid.tech">Astrid Yu</a>, and <a href="https://github.com/SMOK1N-ACES">Joseph Alarid</a>
+        <p class="lead">
+          <a class="btn btn-success btn-lg" href="./planet-collision.zip" target="_blank" role="button">Download</a>
+          <a class="btn btn-primary btn-lg" href="https://github.com/Plenglin/572-Planet-Collisions" target="_blank" role="button">GitHub</a>
+        </p>
+      </div>
+      
+        <div class="media">
+          <video class="mr-3" width="320" height="240" controls>
+            <source src="https://i.imgur.com/pZ75XQx.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="media-body">
+            <h2 class="mt-0">Introduction</h2>
+            <p>Our project is a simulation of an asteroid impacting the Earth. We were inspired by the video on the left, which comes from <a href="https://github.com/mikkel92/Planet-asteroid-interaction">this GitHub repo</a>.</p>
+          </div>
+        </div>
+
+        <hr/>
+
+        <h2>Results</h2>
+      <style>.embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; } .embed-container iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }</style><div class='embed-container'><iframe src='https://www.youtube.com/embed/4lHT7ixTdS0' frameborder='0' allowfullscreen></iframe></div>
+
+        <p>After the first collision, there are 552 particles being simulated at:</p>
+        <ul>
+          <li> 60 FPS running on Ubuntu 20.04 (i5-8300H, GTX 1060M)</li>
+          <li> 20 FPS running on Windows 10 (i7-7820, GTX 1070)</li>
+        </ul>
+        <p>Without GPU-accelerated computation, these would be running at 20 FPS and 1.5 FPS respectively.</p>
+	      <hr>
+      <h2 class="text-center">How it works</h2>
+      
+      <h3>Fragmentation</h3>
+      <p>At the beginning, there are two particles, an <strong>asteroid</strong> and a <strong>planet</strong>, on a collision course with each other. When they collide, they are deleted and replaced with 64 chunks and 488 chunks respectively.</p>
+      <p>Our chunks were made in Blender by slicing meshes and filling them in.</p>
+
+      <div>
+        <img class="img-fluid" src="https://i.imgur.com/OtPyYSc.png" alt="Blender">
+      </div>
+      
+      <hr>
+
+      <h3>Physics Engine</h3>
+      <p>Our physics engine runs in the following 4 steps:</p>
+      
+      <div class="row">
+        <div class="col-xs-12 col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h4>1. GPU Phase</h4>
+              <p>The GPU runs through the cartesian product of all particles, and calculates both gravitational force and intersections. Gravitational force is summed up per-particle, and intersections are recorded in a array list.</p>
+              <p>When the CPU receives the GPU's output, the gravity is written to the particles and the intersecting ones are recorded in a <strong>contact index.</strong></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xs-12 col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h4>2. Intersection Bookkeeping</h4>
+              <p>Contacts keep track of an internal state to improve the stability of low-relative velocity contacts. This phase performs the following tasks:</p>
+              <ul>
+                <li>Creates new contacts that did not previously exist</li>
+                <li>Updates old contacts that still exist</li>
+                <li>Deletes old contacts that no longer exist</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xs-12 col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h4>3. Contact Solving</h4>
+              <p>Once we have our list of contacts <code>contacts</code>, to take care of the n-body case, we essentially do the following in pseudo code:</p>
+              <pre><code>
+repeat contacts.size() times:
+    for contact in contacts:
+        contact.solve_momentum()
+</code></pre>
+              <p>where <code>contact.solve_momentum()</code> takes care of the 2-body case (soon to be described below).</p>
+              <p>Solving contacts multiple times takes care of cases like the Newton&#39;s Cradle. This may seem inefficient in theory because if there&#39;s \(n\) particles, there might be \(n^2\) contacts and thus \(n^3\) calls for <code>solve_momentum()</code>. However, in practice, most particles spend most of their time floating around freely so momentum calculations can be safely done on the CPU, and this step ends up only taking &lt;10% of total processing time.</p>
+              <p>A longer description on the math involved is located <a target="_blank" href="https://astrid.tech/blog/2020-11-22-n-body-collision/">on Astrid's blog</a>.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xs-12 col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h4>4. Integration</h4>
+              <p>This phase performs a single Euler step of position and rotation.</p>
+              <p>Position is integrated with</p>
+              <p>$$s_{k+1} = v \cdot \Delta t + s_k$$</p>
+              <p>where \(s\) is position, \(v\) is velocity, and \(\Delta t\) is the time step.</p>
+              <p>Rotation is stored in a matrix \(\Theta\) to avoid gimbal lock. Angular velocity is a vector \(\omega\) which is in the direction that the axis the object is rotating around using the right-hand rule, scaled to the speed in radians per second.</p>
+              <p>Suppose \(M\) is the matrix representing a rotation of \(|\omega|\cdot \Delta t\) around \(\omega\). Thus, we integrate rotation with</p>
+              <p>$$\Theta_{k+1} = M \cdot \Theta_k$$</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <hr>
+
+      <h3>System differences</h3>
+      <p>With people working on different platforms more extensive testing was needed to ensure that the programs work in all reasonable environments. This program has been tested on Ubuntu Linux and Windows 10.</p>  
+      <h4>Windows</h4>
+      <p>Windows required diffrent imports that the same code from Linux requiring code to be modified to work on all platforms. Furthermore, since the Windows users also were using Visual Studio, the solution and project files had to be manually edited to ensure that the projecty was built in the IDE correctly. The Windows version runs significantly slower than the linux version at the time of writing.</p>
+      <h4>Linux</h4>
+      <p>In Linux, the code can be run using CMake or from CLion. This code base did encounter some challenges since the GLSL support plugin often froze the IDE, so it had to be disabled and written without syntax highlighting.</p>
+
+    </div>
+  </body>
+</html>
+
