@@ -95,12 +95,14 @@ public:
 	}
 };
 
-void build_fragmented_sphere(std::vector<Particle*> &particles, std::vector<MeshPart> &parts, float radius, vec3 pos, vec3 vel) {
+void build_fragmented_sphere(std::vector<Particle *> &particles, std::vector<MeshPart> &parts, float radius, vec3 pos,
+                             vec3 vel, vec3 omega) {
     for (auto &part : parts) {
         auto *particle = new Particle(part.volume, part.inner_radius * radius * 0.9f);
         particle->userdata = &part;
-        particle->pos = part.centroid_offset * radius + pos;
-        particle->vel = vel;
+        auto r = part.centroid_offset * radius;
+        particle->pos = pos + r;
+        particle->vel = vel + cross(r, omega);
         particle->draw_scale = radius;
         particles.push_back(particle);
     }
@@ -353,7 +355,7 @@ public:
 
 		world.load_compute();
 
-        mycam.pos = vec3(0, 0, -80);
+        mycam.pos = vec3(-10, 0, -100);
         world.constants.RESTITUTION = -0.5f;
 
 		Particle *p = new Particle(8, 2);
@@ -425,9 +427,9 @@ public:
                 world.deintersect_all(2);
                 vector<Particle*> particles;
                 auto p = world.particles[1];
-                build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel);
+                build_fragmented_sphere(particles, fragment_parts, p->radius, p->pos, p->vel, p->ang_vel);
                 p = world.particles[0];
-                build_fragmented_sphere(particles, more_parts, p->radius, p->pos, p->vel);
+                build_fragmented_sphere(particles, more_parts, p->radius, p->pos, p->vel, p->ang_vel);
 
                 world.constants.RESTITUTION = 0.99;
                 ratio = 1;
